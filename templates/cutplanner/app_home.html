@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4" x-data="{ 
+        showLabels: $persist(true), 
+        showEdgeBanding: $persist(false),
+        showMaterials: $persist(false),
+        showGrainDirection: $persist(false),
+
+        Materials: $persist([]),
+        EdgeBandings: $persist([]),
+        panels: $persist([]),
+        stockSheets: $persist([]),
+
+        addPanel() {
+            this.panels.push({ 
+                label: '', 
+                length: '', 
+                width: '', 
+                quantity: 1, 
+                material: '', 
+                grain_direction: 'none',
+                edge_top: '', 
+                edge_bottom: '', 
+                edge_left: '', 
+                edge_right: '' 
+            });
+        },
+        addStock() {
+            this.stockSheets.push({ 
+                label: '', 
+                length: '', 
+                width: '', 
+                quantity: 1, 
+                material: '', 
+                grain_direction: 'none' 
+            });
+        }
+     }" x-init="
+        if (panels.length === 0) { addPanel(); }
+        if (stockSheets.length === 0) { addStock(); }">
+
+    <div class="card bg-base-100 shadow-xl border border-base-200">
+        <div class="card-body p-6">
+            <h2 class="card-title text-primary text-sm uppercase tracking-widest mb-4">Configuration</h2>
+
+            <div class="flex flex-wrap items-center gap-6">
+
+                <div
+                    class="flex items-center gap-3 px-4 py-2 bg-base-200/50 rounded-full border border-base-300 shadow-sm transition-all hover:bg-base-200">
+                    <input type="checkbox" class="toggle toggle-secondary" x-model="showLabels" />
+                    <span class="label-text font-semibold whitespace-nowrap">Use Labels</span>
+                </div>
+
+                <div
+                    class="flex items-center gap-3 px-4 py-2 bg-base-200/50 rounded-full border border-base-300 shadow-sm transition-all hover:bg-base-200">
+                    <input type="checkbox" class="toggle toggle-secondary" x-model="showEdgeBanding" />
+                    <span class="label-text font-semibold whitespace-nowrap">Edge Banding</span>
+                </div>
+
+                <div
+                    class="flex items-center gap-3 px-4 py-2 bg-base-200/50 rounded-full border border-base-300 shadow-sm transition-all hover:bg-base-200">
+                    <input type="checkbox" class="toggle toggle-secondary" x-model="showGrainDirection" />
+                    <span class="label-text font-semibold whitespace-nowrap">Consider Grain Direction</span>
+                </div>
+
+                <div
+                    class="flex items-center gap-3 px-4 py-2 bg-base-200/50 rounded-full border border-base-300 shadow-sm transition-all hover:bg-base-200">
+                    <input type="checkbox" class="toggle toggle-secondary" x-model="showMaterials" />
+                    <span class="label-text font-semibold whitespace-nowrap">Material Grouping</span>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <div class="mt-12">
+        <h2 class="text-sm font-bold uppercase tracking-widest text-primary/70">
+            Panels
+        </h2>
+    </div>
+    <div class="h-96 overflow-x-auto">
+        <table class="table table-pin-rows bg-base-200">
+            <thead>
+                <tr>
+                    <th x-show="showLabels" class="bg-base-200">Label</th>
+                    <th class="bg-base-200">Length</th>
+                    <th class="bg-base-200">Width</th>
+                    <th class="bg-base-200">Qty</th>
+                    <th x-show="showMaterials" class="bg-base-200">Material</th>
+                    <th x-show="showGrainDirection" class="bg-base-200">Grain Direction</th>
+                    <th x-show="showEdgeBanding" class="bg-base-200">Edge Banding</th>
+                    <th class="bg-base-200 text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="panel-table-body">
+                <template x-for="(panel, index) in panels" :key="index">
+                    {% include 'cutplanner/partials/panel_row_alpine.html' %}
+                </template>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="100%" class="bg-base-200/50 p-4">
+                        <button type="button" class="btn btn-outline btn-primary btn-sm gap-2" @click="addPanel()">
+                            Add Row
+                        </button>
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="mt-12">
+        <h2 class="text-sm font-bold uppercase tracking-widest text-primary/70">
+            Avaible Stock Sheets
+        </h2>
+    </div>
+    <div class="h-96 overflow-x-auto">
+        <table class="table table-pin-rows bg-base-200">
+            <thead>
+                <tr>
+                    <th x-show="showLabels" class="bg-base-200">Label</th>
+                    <th class="bg-base-200">Length</th>
+                    <th class="bg-base-200">Width</th>
+                    <th class="bg-base-200">Qty</th>
+                    <th x-show="showMaterials" class="bg-base-200">Material</th>
+                    <th x-show="showGrainDirection" class="bg-base-200">Grain Direction</th>
+                    <th class="bg-base-200 text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <template x-for="(sheet, index) in stockSheets" :key="index">
+                    {% include 'cutplanner/partials/stock_row_alpine.html' %}
+                </template>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="100%" class="bg-base-200/50 p-4">
+                        <button type="button" class="btn btn-outline btn-secondary btn-sm gap-2" @click="addStock()">
+                            Add Row
+                        </button>
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <dialog id="material_modal" class="modal">
+        <div class="modal-box" x-data="{ newMatName: '' }">
+            <h3 class="font-bold text-lg text-primary">Add New Material</h3>
+            <div class="form-control w-full mt-4">
+                <label class="label">
+                    <span class="label-text font-semibold">Material Name</span>
+                </label>
+                <input type="text" x-model="newMatName" class="input input-bordered w-full"
+                    @keydown.enter="if(newMatName) { Materials.push({id: Date.now(), name: newMatName}); newMatName = ''; material_modal.close(); }">
+            </div>
+
+            <div class="modal-action">
+                <button type="button" class="btn" @click="material_modal.close()">Cancel</button>
+                <button type="button" class="btn btn-primary" :disabled="!newMatName"
+                    @click="Materials.push({id: Date.now(), name: newMatName}); newMatName = ''; material_modal.close();">
+                    Save Material
+                </button>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop">
+            <button>close</button>
+        </form>
+    </dialog>
+</div>
+
+{% endblock %}

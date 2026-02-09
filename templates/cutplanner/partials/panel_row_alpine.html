@@ -1,0 +1,61 @@
+<tr class="hover group">
+    <td x-show="showLabels">
+        <input type="text" x-model="panel.label" placeholder="Panel name..."
+            class="input input-bordered input-sm w-full focus:input-primary">
+    </td>
+
+    <td>
+        <input type="number" x-model.number="panel.length" step="0.1" class="input input-bordered input-sm w-full"
+            @input="if (index === panels.length - 1) addPanel()" @change="panel.length = Math.abs(panel.length || 0)">
+    </td>
+
+    <td>
+        <input type="number" x-model.number="panel.width" step="0.1" class="input input-bordered input-sm w-full"
+            @input="if (index === panels.length - 1) addPanel()" @change="panel.width = Math.abs(panel.width || 0)">
+    </td>
+
+    <td>
+        <input type="number" x-model.number="panel.quantity" class="input input-bordered input-sm w-20"
+            @input="if (index === panels.length - 1) addPanel()"
+            @change="if(!panel.quantity || panel.quantity < 1) panel.quantity = 1">
+    </td>
+
+    <td x-show="showMaterials">
+        <select :value="panel.material" class="select select-bordered select-sm w-full" @input="if($el.value === 'ADD_NEW') { 
+                material_modal.showModal(); 
+                $el.value = panel.material || ''; 
+            } else {
+                panel.material = $el.value;
+            }">
+            <option value="">---</option>
+            <template x-for="mat in Materials" :key="mat.id">
+                <option :value="mat.id" x-text="mat.name" :selected="panel.material == mat.id"></option>
+            </template>
+            <option value="ADD_NEW" class="font-bold text-primary">Add New Material</option>
+        </select>
+    </td>
+
+    <td x-show="showGrainDirection">
+        <select x-model="panel.grain_direction" class="select select-bordered select-sm w-full">
+            <option value="none">No Grain</option>
+            <option value="horizontal">Horizontal ↔</option>
+            <option value="vertical">Vertical ↕</option>
+        </select>
+    </td>
+
+    <td x-show="showEdgeBanding">
+        <div class="text-xs italic opacity-50">Placeholder</div>
+    </td>
+
+    <td class="text-right">
+        <button type="button" class="btn btn-ghost btn-xs text-error font-bold" @click="
+            const isDirty = panel.label || panel.length || panel.width;
+            if(!isDirty || confirm('Delete this panel?')) {
+                panels.splice(index, 1);
+                if (panels.length === 0) addPanel();
+            }
+        ">
+            DELETE ROW
+        </button>
+    </td>
+</tr>
