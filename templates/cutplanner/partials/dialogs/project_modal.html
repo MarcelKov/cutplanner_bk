@@ -1,0 +1,23 @@
+<dialog id="save_as_modal" class="modal">
+    <div class="modal-box w-11/12 max-w-2xl">
+        <h3 class="font-bold text-lg text-primary uppercase">Project Name</h3>
+        <div class="form-control w-full py-4">
+            <input type="text" 
+                   x-model="projectName" 
+                   placeholder="..." 
+                   class="input input-bordered w-full font-bold"
+                   @keydown.enter="if(projectName.trim()) { saveProject(projectName); save_as_modal.close(); }">
+        </div>
+        <div class="modal-action">
+            <button class="btn btn-ghost" @click="save_as_modal.close()">Cancel</button>
+            <button class="btn btn-primary" 
+                    :disabled="!projectName.trim() || isProjectSaving"
+                    @click="saveProject(projectName); save_as_modal.close();">
+                Save
+            </button>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+    </form>
+</dialog>

@@ -1,0 +1,38 @@
+<div class="card bg-base-100 shadow-sm border border-base-300">
+    <div class="card-body p-4">
+        <h3 class="font-bold text-xs uppercase tracking-widest text-primary mb-4">Inventory on Sheets</h3>
+
+        <template x-for="(sheet, sIndex) in optimizationResults.sheets" :key="sIndex">
+            <div class="collapse collapse-arrow bg-base-200 mb-2 border border-base-300">
+                <input type="checkbox" checked />
+                <div class="collapse-title text-sm font-bold flex justify-between items-center">
+                    <div>
+                        <span x-text="sheet.label"></span>
+                        <span class="opacity-50 font-normal ml-2 text-xs"
+                            x-text="`(${sheet.width} x ${sheet.length} mm)`"></span>
+                    </div>
+                </div>
+                <div class="collapse-content p-0">
+                    <table class="table table-sm table-zebra w-full bg-white">
+                        <thead class="text-[10px] uppercase font-bold opacity-60">
+                            <tr>
+                                <th>Qty</th>
+                                <th>Label</th>
+                                <th class="text-right">Size</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="item in getGroupedParts(sheet.parts)" :key="item.label + item.w + item.h">
+                                <tr>
+                                    <td class="font-black text-primary" x-text="`${item.count}x` "></td>
+                                    <td class="font-medium text-xs" x-text="item.label"></td>
+                                    <td class="text-right text-[10px] font-mono" x-text="`${item.w} x ${item.h}`"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </template>
+    </div>
+</div>

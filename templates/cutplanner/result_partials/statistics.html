@@ -1,0 +1,23 @@
+<div class="space-y-4">
+    <div class="card bg-base-100 shadow-sm border border-base-300">
+        <div class="card-body p-5">
+            <h3 class="font-bold text-xs uppercase tracking-widest text-primary mb-4">Statistics</h3>
+            
+            <div class="flex flex-col gap-4">
+                <div class="flex justify-between items-end">
+                    <span class="text-xs opacity-60 uppercase font-bold text-black">Utilization</span>
+                    <span class="text-2xl font-black" x-text="`${optimizationResults.stats.total_utilization}%` "></span>
+                </div>
+                <progress class="progress progress-primary w-full h-3" 
+                          :value="optimizationResults.stats.total_utilization" max="100"></progress>
+                
+                <div class="grid grid-cols-2 gap-2 pt-2 border-t border-base-200">
+                    <div class="flex flex-col">
+                        <span class="text-[10px] uppercase font-bold opacity-50">Used Sheets</span>
+                        <span class="text-lg font-bold" x-text="optimizationResults.stats.sheet_count"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

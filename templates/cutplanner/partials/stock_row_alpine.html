@@ -1,18 +1,16 @@
 <tr class="hover group">
-    <td x-show="showLabels">
+    <td x-show="settings.showLabels">
         <input type="text" x-model="sheet.label" placeholder="..." class="input input-bordered input-sm w-full">
     </td>
 
     <td>
         <input type="number" x-model.number="sheet.length" step="0.1" class="input input-bordered input-sm w-full"
-            @input="if (index === stockSheets.length - 1) addStock()"
-            @change="sheet.length = Math.abs(sheet.length || 0)">
+            @input="if (index === stockSheets.length - 1) addStock()" @change="validateNumber(sheet, 'length')">
     </td>
 
     <td>
         <input type="number" x-model.number="sheet.width" step="0.1" class="input input-bordered input-sm w-full"
-            @input="if (index === stockSheets.length - 1) addStock()"
-            @change="sheet.width = Math.abs(sheet.width || 0)">
+            @input="if (index === stockSheets.length - 1) addStock()" @change="validateNumber(sheet, 'width')">
     </td>
 
     <td>
@@ -21,38 +19,30 @@
             @change="if(!sheet.quantity || sheet.quantity < 1) sheet.quantity = 1">
     </td>
 
-    <td x-show="showMaterials">
-        <select :value="sheet.material" class="select select-bordered select-sm w-full" @input="if($el.value === 'ADD_NEW') { 
-                    material_modal.showModal(); 
-                    $el.value = sheet.material || ''; 
-                } else {
-                    sheet.material = $el.value;
-                }">
+    <td x-show="settings.showMaterials">
+        <select :value="sheet.material" class="select select-bordered select-sm w-full font-bold text-black"
+            @change="handleMaterialChange(sheet, $event)">
+
             <option value="">---</option>
+
             <template x-for="mat in Materials" :key="mat.id">
-                <option :value="mat.id" x-text="mat.name" :selected="sheet.material == mat.id"></option>
+                <option :value="mat.id" x-text="mat.name"></option>
             </template>
-            <option value="ADD_NEW" class="font-bold text-primary italic">Add New Material</option>
+
+            <option value="ADD_NEW" class="font-black text-primary italic">Add New Material</option>
         </select>
     </td>
 
-    <td x-show="showGrainDirection">
+    <td x-show="settings.showGrainDirection">
         <select x-model="sheet.grain_direction" class="select select-bordered select-sm w-full">
-            <option value="none">No Grain</option>
-            <option value="horizontal">Horizontal ↔</option>
-            <option value="vertical">Vertical ↕</option>
+            {% for value, label in grain_choices %}
+            <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
         </select>
     </td>
 
     <td class="text-right">
-        <button type="button" class="btn btn-ghost btn-xs text-error font-bold"
-            @click="
-                    const isDirty = sheet.label || sheet.length || sheet.width;
-                    if(!isDirty || confirm('Delete this stock sheet?')) {
-                        stockSheets.splice(index, 1);
-                        if (stockSheets.length === 0) addStock();
-                    }
-                ">
+        <button type="button" class="btn btn-ghost btn-xs text-error font-bold" @click="removeStock(index)">
             DELETE ROW
         </button>
     </td>

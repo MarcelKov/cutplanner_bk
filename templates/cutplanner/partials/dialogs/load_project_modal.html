@@ -1,0 +1,27 @@
+<dialog id="load_project_modal" class="modal" @close="selectedProjectId = null">
+    <div class="modal-box w-11/12 max-w-2xl bg-base-100">
+        <h3 class="font-bold text-lg text-primary uppercase">My Projects</h3>
+
+        <div id="project_list_container"></div>
+
+        <div class="modal-action flex justify-between items-center border-t pt-4">
+            <div class="text-xs opacity-50 px-2">
+                <span x-show="!selectedProjectId">Select a project.</span>
+            </div>
+            <div class="flex gap-2">
+                <button class="btn btn-ghost"
+                    @click="load_project_modal.close()">
+                    Close
+                </button>
+
+                <button class="btn btn-primary px-8" :disabled="!selectedProjectId"
+                    @click="loadProject(selectedProjectId); load_project_modal.close()">
+                    Open Project
+                </button>
+            </div>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+    </form>
+</dialog>

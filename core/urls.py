@@ -17,9 +17,11 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import TemplateView
+from cutplanner.api import api
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('cutplanner.urls')),
     path('accounts/', include('django.contrib.auth.urls')),
+    path("api/", api.urls),
 ]

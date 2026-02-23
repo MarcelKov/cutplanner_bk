@@ -1,0 +1,37 @@
+<div class="overflow-x-auto">
+    <table class="table table-zebra table-pin-rows w-full">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Last Updated</th>
+                <th class="text-right">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for project in projects %}
+            <tr class="cursor-pointer hover:bg-base-200"
+                :class="selectedProjectId === {{ project.id }} ? 'bg-primary/10 text-primary' : ''"
+                @click="selectedProjectId = {{ project.id }}">
+
+                <td>
+                    <div class="flex items-center gap-3">
+                        <input type="radio" class="radio radio-primary radio-xs"
+                            :checked="selectedProjectId === {{ project.id }}">
+                        <span class="font-medium">{{ project.name }}</span>
+                    </div>
+                </td>
+                <td class="text-xs opacity-70">{{ project.updated_at|date:"d.m.Y H:i" }}</td>
+                <td class="text-right">
+                    <button class="btn btn-ghost btn-sm text-error px-2" @click.stop
+                        hx-delete="{% url 'delete_project' project.id %}"
+                        hx-confirm="Delete project '{{ project.name }}'?" hx-target="closest tr"
+                        hx-swap="outerHTML"
+                        @htmx:after-request="handleProjectDeletion({{ project.id }})">
+                        DELETE
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

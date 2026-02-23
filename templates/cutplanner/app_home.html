@@ -1,44 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container py-4" x-data="{ 
-        showLabels: $persist(true), 
-        showEdgeBanding: $persist(false),
-        showMaterials: $persist(false),
-        showGrainDirection: $persist(false),
-
-        Materials: $persist([]),
-        EdgeBandings: $persist([]),
-        panels: $persist([]),
-        stockSheets: $persist([]),
-
-        addPanel() {
-            this.panels.push({ 
-                label: '', 
-                length: '', 
-                width: '', 
-                quantity: 1, 
-                material: '', 
-                grain_direction: 'none',
-                edge_top: '', 
-                edge_bottom: '', 
-                edge_left: '', 
-                edge_right: '' 
-            });
-        },
-        addStock() {
-            this.stockSheets.push({ 
-                label: '', 
-                length: '', 
-                width: '', 
-                quantity: 1, 
-                material: '', 
-                grain_direction: 'none' 
-            });
-        }
-     }" x-init="
-        if (panels.length === 0) { addPanel(); }
-        if (stockSheets.length === 0) { addStock(); }">
-
+<div class="container py-4">
     <div class="card bg-base-100 shadow-xl border border-base-200">
         <div class="card-body p-6">
             <h2 class="card-title text-primary text-sm uppercase tracking-widest mb-4">Configuration</h2>
@@ -46,29 +8,94 @@
             <div class="flex flex-wrap items-center gap-6">
 
                 <div
-                    class="flex items-center gap-3 px-4 py-2 bg-base-200/50 rounded-full border border-base-300 shadow-sm transition-all hover:bg-base-200">
-                    <input type="checkbox" class="toggle toggle-secondary" x-model="showLabels" />
+                    class="flex items-center gap-3 px-4 py-2 bg-base-200/50 rounded-full border border-base-300 shadow-sm transition-all hover:bg-base-200 cursor-pointer">
+                    <input type="checkbox" class="toggle toggle-secondary" x-model="settings.showLabels" />
                     <span class="label-text font-semibold whitespace-nowrap">Use Labels</span>
                 </div>
 
                 <div
-                    class="flex items-center gap-3 px-4 py-2 bg-base-200/50 rounded-full border border-base-300 shadow-sm transition-all hover:bg-base-200">
-                    <input type="checkbox" class="toggle toggle-secondary" x-model="showEdgeBanding" />
+                    class="flex items-center gap-3 px-4 py-2 bg-base-200/50 rounded-full border border-base-300 shadow-sm transition-all hover:bg-base-200 cursor-pointer">
+                    <input type="checkbox" class="toggle toggle-secondary" x-model="settings.showEdgeBanding" />
                     <span class="label-text font-semibold whitespace-nowrap">Edge Banding</span>
                 </div>
 
                 <div
-                    class="flex items-center gap-3 px-4 py-2 bg-base-200/50 rounded-full border border-base-300 shadow-sm transition-all hover:bg-base-200">
-                    <input type="checkbox" class="toggle toggle-secondary" x-model="showGrainDirection" />
+                    class="flex items-center gap-3 px-4 py-2 bg-base-200/50 rounded-full border border-base-300 shadow-sm transition-all hover:bg-base-200 cursor-pointer">
+                    <input type="checkbox" class="toggle toggle-secondary" x-model="settings.showGrainDirection" />
                     <span class="label-text font-semibold whitespace-nowrap">Consider Grain Direction</span>
                 </div>
 
                 <div
-                    class="flex items-center gap-3 px-4 py-2 bg-base-200/50 rounded-full border border-base-300 shadow-sm transition-all hover:bg-base-200">
-                    <input type="checkbox" class="toggle toggle-secondary" x-model="showMaterials" />
+                    class="flex items-center gap-3 px-4 py-2 bg-base-200/50 rounded-full border border-base-300 shadow-sm transition-all hover:bg-base-200 cursor-pointer">
+                    <input type="checkbox" class="toggle toggle-secondary" x-model="settings.showMaterials" />
                     <span class="label-text font-semibold whitespace-nowrap">Material Grouping</span>
                 </div>
+                <div class="flex flex-wrap items-center gap-4">
+                    <div
+                        class="flex items-center gap-3 px-4 py-1.5 bg-base-200/50 rounded-full border border-base-300 shadow-sm transition-all hover:bg-base-200">
+                        <span class="label-text font-bold text-black whitespace-nowrap uppercase text-xs">Blade
+                            Thickness:</span>
+                        <input type="number" x-model.number="settings.bladeThickness" step="0.1" min="0"
+                            @change="validateConfig('bladeThickness')"
+                            class="w-16 bg-transparent border-none focus:ring-0 p-0 text-sm font-bold text-black text-center join-item" />
+                    </div>
 
+                    <div
+                        class="flex items-center gap-3 px-4 py-1.5 bg-base-200/50 rounded-full border border-base-300 shadow-sm transition-all hover:bg-base-200">
+                        <span class="label-text font-bold text-black whitespace-nowrap uppercase text-xs">Optimization
+                            Priority:</span>
+                        <select x-model="settings.optimizationPriority"
+                            class="bg-transparent border-none focus:ring-0 p-0 text-xs font-bold text-black cursor-pointer">
+                            {% for value, label in optimization_choices %}
+                            <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div
+                        class="flex items-center gap-3 px-4 py-2 bg-base-200/50 rounded-full border border-base-300 shadow-sm transition-all hover:bg-base-200 cursor-pointer">
+                        <input type="checkbox" class="toggle toggle-secondary" x-model="settings.useOnlyOneSheet" />
+                        <span class="label-text font-semibold whitespace-nowrap">Use one sheet only</span>
+                    </div>
+
+                    <div
+                        class="flex items-center gap-3 px-4 py-2 bg-base-200/50 rounded-full border border-base-300 shadow-sm transition-all hover:bg-base-200 cursor-pointer">
+                        <input type="checkbox" class="toggle toggle-secondary" x-model="settings.showTrimSettings" />
+                        <span class="label-text font-semibold whitespace-nowrap">Trim Edges</span>
+                    </div>
+                </div>
+
+                <div x-show="settings.showTrimSettings" x-transition
+                    class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-base-200/30 rounded-2xl border border-dashed border-base-400">
+
+                    <div class="flex flex-col">
+                        <label class="text-[10px] uppercase font-black text-black ml-2 mb-1">Top Trim</label>
+                        <input type="number" x-model.number="settings.trim.top" min="0"
+                            @change="validateConfig('trimTop')"
+                            class="input input-bordered input-sm rounded-xl font-bold text-black focus:border-primary" />
+                    </div>
+
+                    <div class="flex flex-col">
+                        <label class="text-[10px] uppercase font-black text-black ml-2 mb-1">Bottom Trim</label>
+                        <input type="number" x-model.number="settings.trim.bottom" min="0"
+                            @change="validateConfig('trimBottom')"
+                            class="input input-bordered input-sm rounded-xl font-bold text-black focus:border-primary" />
+                    </div>
+
+                    <div class="flex flex-col">
+                        <label class="text-[10px] uppercase font-black text-black ml-2 mb-1">Left Trim</label>
+                        <input type="number" x-model.number="settings.trim.left" min="0"
+                            @change="validateConfig('trimLeft')"
+                            class="input input-bordered input-sm rounded-xl font-bold text-black focus:border-primary" />
+                    </div>
+
+                    <div class="flex flex-col">
+                        <label class="text-[10px] uppercase font-black text-black ml-2 mb-1">Right Trim</label>
+                        <input type="number" x-model.number="settings.trim.right" min="0"
+                            @change="validateConfig('trimRight')"
+                            class="input input-bordered input-sm rounded-xl font-bold text-black focus:border-primary" />
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -81,13 +108,13 @@
         <table class="table table-pin-rows bg-base-200">
             <thead>
                 <tr>
-                    <th x-show="showLabels" class="bg-base-200">Label</th>
+                    <th x-show="settings.showLabels" class="bg-base-200">Label</th>
                     <th class="bg-base-200">Length</th>
                     <th class="bg-base-200">Width</th>
                     <th class="bg-base-200">Qty</th>
-                    <th x-show="showMaterials" class="bg-base-200">Material</th>
-                    <th x-show="showGrainDirection" class="bg-base-200">Grain Direction</th>
-                    <th x-show="showEdgeBanding" class="bg-base-200">Edge Banding</th>
+                    <th x-show="settings.showMaterials" class="bg-base-200">Material</th>
+                    <th x-show="settings.showGrainDirection" class="bg-base-200">Grain Direction</th>
+                    <th x-show="settings.showEdgeBanding" class="bg-base-200">Edge Banding</th>
                     <th class="bg-base-200 text-right">Actions</th>
                 </tr>
             </thead>
@@ -99,7 +126,7 @@
             <tfoot>
                 <tr>
                     <td colspan="100%" class="bg-base-200/50 p-4">
-                        <button type="button" class="btn btn-outline btn-primary btn-sm gap-2" @click="addPanel()">
+                        <button type="button" class="btn btn-outline btn-secondary btn-sm gap-2" @click="addPanel()">
                             Add Row
                         </button>
                     </td>
@@ -119,12 +146,12 @@
         <table class="table table-pin-rows bg-base-200">
             <thead>
                 <tr>
-                    <th x-show="showLabels" class="bg-base-200">Label</th>
+                    <th x-show="settings.showLabels" class="bg-base-200">Label</th>
                     <th class="bg-base-200">Length</th>
                     <th class="bg-base-200">Width</th>
                     <th class="bg-base-200">Qty</th>
-                    <th x-show="showMaterials" class="bg-base-200">Material</th>
-                    <th x-show="showGrainDirection" class="bg-base-200">Grain Direction</th>
+                    <th x-show="settings.showMaterials" class="bg-base-200">Material</th>
+                    <th x-show="settings.showGrainDirection" class="bg-base-200">Grain Direction</th>
                     <th class="bg-base-200 text-right">Actions</th>
                 </tr>
             </thead>
@@ -144,30 +171,33 @@
             </tfoot>
         </table>
     </div>
+    <div class="flex justify-center py-10">
+        <div class="relative">
+            <template x-if="optimizationResults.sheets.length > 0">
+                <a href="{% url 'cutting_results' %}"
+                    class="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-bold uppercase tracking-widest text-primary hover:underline transition-all">
+                    Last plan available →
+                </a>
+            </template>
 
-    <dialog id="material_modal" class="modal">
-        <div class="modal-box" x-data="{ newMatName: '' }">
-            <h3 class="font-bold text-lg text-primary">Add New Material</h3>
-            <div class="form-control w-full mt-4">
-                <label class="label">
-                    <span class="label-text font-semibold">Material Name</span>
-                </label>
-                <input type="text" x-model="newMatName" class="input input-bordered w-full"
-                    @keydown.enter="if(newMatName) { Materials.push({id: Date.now(), name: newMatName}); newMatName = ''; material_modal.close(); }">
-            </div>
-
-            <div class="modal-action">
-                <button type="button" class="btn" @click="material_modal.close()">Cancel</button>
-                <button type="button" class="btn btn-primary" :disabled="!newMatName"
-                    @click="Materials.push({id: Date.now(), name: newMatName}); newMatName = ''; material_modal.close();">
-                    Save Material
-                </button>
-            </div>
+            <button @click="validateAndOptimize()"
+                class="btn btn-primary btn-lg px-12 shadow-xl hover:scale-105 transition-transform">
+                Optimize Now
+            </button>
         </div>
-        <form method="dialog" class="modal-backdrop">
-            <button>close</button>
-        </form>
-    </dialog>
+    </div>
+    <div id="planner_modals">
+        {% include 'cutplanner/partials/dialogs/material_modal.html' %}
+        {% include 'cutplanner/partials/dialogs/banding_modal.html' %}
+        {% include 'cutplanner/partials/dialogs/eb_modal.html' %}
+    </div>
+    <div class="toast toast-end toast-bottom z-[100]">
+        <template x-if="errorMessage">
+            <div class="alert alert-error shadow-lg transition-all">
+                <span x-text="errorMessage"></span>
+            </div>
+        </template>
+    </div>
 </div>
 
 {% endblock %}

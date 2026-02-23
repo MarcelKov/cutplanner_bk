@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto p-6" x-init="generatePlan()">
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl text-primary  uppercase tracking-tight">Cutting Plan</h1>
+        </div>
+        <a href="{% url 'cutting_app' %}" class="btn btn-primary btn-outline">
+            ← Back to Editor
+        </a>
+    </div>
+
+    <template x-if="isOptimizing">
+        <div class="flex flex-col items-center justify-center py-20">
+            <span class="loading loading-bars loading-lg text-primary"></span>
+            <p class="mt-4 font-bold animate-pulse">Optimazing...</p>
+        </div>
+    </template>
+
+    <template x-if="errorMessage">
+        <div class="alert alert-error shadow-lg mb-6">
+            <span x-text="errorMessage"></span>
+        </div>
+    </template>
+
+    <div x-show="!isOptimizing && optimizationResults" class="grid grid-cols-1 xl:grid-cols-4 gap-6 items-start">
+        
+        <aside class="xl:col-span-1 space-y-6">
+            {% include 'cutplanner/result_partials/parts_list.html' %}
+            {% include 'cutplanner/result_partials/unfitted_list.html' %}
+        </aside>
+
+        <main class="xl:col-span-2 space-y-8">
+            {% include 'cutplanner/result_partials/plan_viewer.html' %}
+        </main>
+
+        <aside class="xl:col-span-1">
+            {% include 'cutplanner/result_partials/statistics.html' %}
+        </aside>
+
+    </div>
+
+</div>
+{% endblock %}

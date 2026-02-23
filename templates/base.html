@@ -10,29 +10,90 @@
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"
         integrity="sha384-/TgkGk7p307TH7EXJDuUlgG3Ce1UVolAOFopFekQkkXihi5u/6OCvVKyz1W+idaz"
         crossorigin="anonymous"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/persist@3.x.x/dist/cdn.min.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/persist@3.x.x/dist/cdn.min.js"></script>
+    <script type="module" src="{% static 'js/main.js' %}"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 
-<body class="bg-base-200 min-h-screen font-sans" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-
-    <div class="navbar bg-primary text-primary-content shadow-lg px-4">
+<body class="bg-base-200 min-h-screen font-sans" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' x-data="plannerData">
+    <div class="navbar bg-primary text-primary-content shadow-lg px-4 sticky top-0 z-50">
         <div class="flex-1">
-            <a href="{% url 'cutting_app' %}" class="btn btn-ghost text-xl font-bold">CutPlanner</a>
+            <a href="/" class="btn btn-ghost text-xl font-bold">CutPlanner</a>
         </div>
-        <div class="flex-none gap-4">
-            {% if user.is_authenticated %}
-            <div class="flex items-center gap-3">
-                <span class="text-sm opacity-90">Hello, <span class="font-bold">{{ user.username }}</span></span>
-                <form action="{% url 'logout' %}" method="post" class="inline">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-sm btn-ghost border-white/20 hover:bg-white/10">Logout</button>
-                </form>
-            </div>
-            {% else %}
-            <a href="{% url 'login' %}" class="btn btn-sm btn-ghost">Login</a>
-            <a href="{% url 'signup' %}" class="btn btn-sm btn-secondary">Sign Up</a>
+
+        <div class="flex-none flex items-center gap-2">
+
+            {% if not user.is_authenticated %}
+            <a href="{% url 'login' %}" class="btn btn-sm btn-ghost border-white/20 hover:bg-white/10 mr-2">
+                Sign In
+            </a>
             {% endif %}
+
+            <div class="dropdown dropdown-end">
+                <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
+                    <div
+                        class="w-10 rounded-full border-2 border-primary-content/20 flex items-center justify-center bg-primary-focus">
+                        {% if user.is_authenticated %}
+                        <span class="text-xs font-bold">{{ user.username|slice:":2"|upper }}</span>
+                        {% else %}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <ul tabindex="0"
+                    class="dropdown-content menu bg-base-100 rounded-box z-[1] w-64 p-2 shadow-2xl text-base-content mt-3 border border-base-200">
+                    <li class="menu-title flex flex-row items-center gap-2 px-4 py-3">
+                        <span class="text-xs opacity-50 uppercase tracking-widest">Projects</span>
+                    </li>
+
+                    <li>
+                        <a @click.prevent="resetProject()">New Blank Project</a>
+                    </li>
+
+                    <li class="{% if not user.is_authenticated %}opacity-50 pointer-events-none{% endif %}">
+                        <a @click.prevent="load_project_modal.showModal()" hx-get="{% url 'list_projects' %}"
+                            hx-target="#project_list_container" class="flex items-center gap-2 cursor-pointer">
+                            Load Project
+                        </a>
+                    </li>
+
+                    <li class="{% if not user.is_authenticated %}opacity-50 pointer-events-none{% endif %}">
+                        <a @click.prevent="projectId ? saveProject() : null"
+                            :class="!projectId ? 'opacity-50 cursor-not-allowed grayscale' : ''"
+                            class="flex items-center gap-2">
+                            Save Project
+                        </a>
+                    </li>
+
+                    <li class="{% if not user.is_authenticated %}opacity-50 pointer-events-none{% endif %}">
+                        <a @click.prevent="save_as_modal.showModal()" class="flex items-center gap-2">
+                            Save Project As...
+                        </a>
+                    </li>
+
+                    <div class="divider my-1"></div>
+
+                    {% if user.is_authenticated %}
+                    <li>
+                        <form action="{% url 'logout' %}" method="post" class="p-0">
+                            {% csrf_token %}
+                            <button type="submit" class="w-full text-left px-4 py-2 text-error hover:bg-error/10">
+                                Logout
+                            </button>
+                        </form>
+                    </li>
+                    {% else %}
+                    <li>
+                        <a href="{% url 'signup' %}" class="text-secondary font-bold">Create Account</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
         </div>
     </div>
 
@@ -40,6 +101,12 @@
         {% block content %}
         {% endblock %}
     </main>
+    {% include "cutplanner/partials/dialogs/project_modal.html" %}
+    {% include "cutplanner/partials/dialogs/load_project_modal.html" %}
 </body>
+<script>
+    window.homeUrl = "{% url 'cutting_app' %}";
+    window.resultsUrl = "{% url 'cutting_results' %}"
+</script>
 
 </html>

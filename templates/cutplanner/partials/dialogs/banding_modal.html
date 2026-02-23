@@ -1,0 +1,36 @@
+<dialog id="banding_modal" class="modal">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg text-primary mb-4">Edge Banding</h3>
+        <template x-if="currentPanel">
+            <div class="space-y-4">
+                <template x-for="side in ['top', 'bottom', 'left', 'right']" :key="side">
+                    <div class="form-control w-full">
+                        <label class="label py-1">
+                            <span class="label-text text-[10px] uppercase font-black text-black"
+                                x-text="'Edge ' + side"></span>
+                        </label>
+
+                        <select class="select select-bordered select-sm w-full font-bold text-black"
+                            :value="currentPanel['edge_' + side]"
+                            @change="handleEdgeBandingChange(currentPanel, side, $event)">
+
+                            <option value="">None</option>
+
+                            <template x-for="eb in EdgeBandings" :key="eb.id">
+                                <option :value="eb.id" x-text="eb.name"></option>
+                            </template>
+
+                            <option value="ADD_NEW_EB" class="text-primary font-black italic">+ Add New</option>
+                        </select>
+                    </div>
+                </template>
+            </div>
+        </template>
+        <div class="modal-action mt-6">
+            <button class="btn btn-primary btn-sm font-black uppercase" @click="banding_modal.close()">OK</button>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+    </form>
+</dialog>
