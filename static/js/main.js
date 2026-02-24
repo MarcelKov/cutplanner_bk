@@ -8,6 +8,7 @@ document.addEventListener('alpine:init', () => {
         isOptimizing: false,
         errorMessage: '',
         currentPanel: null,
+        currentSheetIndex: 0,
 
         Materials: Alpine.$persist([]),
         EdgeBandings: Alpine.$persist([]),
@@ -43,6 +44,10 @@ document.addEventListener('alpine:init', () => {
         init() {
             if (this.panels.length === 0) this.addPanel();
             if (this.stockSheets.length === 0) this.addStock();
+
+            this.$watch('currentSheetIndex', () => {
+                this.drawCanvas();
+            });
         },
 
         addPanel() {
@@ -339,5 +344,59 @@ document.addEventListener('alpine:init', () => {
             });
             return Object.values(grouped);
         },
+        drawCanvas() {
+            if (this.konvaStage) {
+                this.konvaStage.destroy();
+            }
+            const sheet = this.optimizationResults.sheets[this.currentSheetIndex];
+            const container = document.getElementById('konva-canvas');
+
+            const width = container.offsetWidth || 600;
+            const height = container.offsetHeight || 600;
+
+            const scale = Math.min(
+                (width * 0.9) / sheet.width,
+                (height * 0.9) / sheet.length
+            );
+
+            const xOffset = (width - sheet.width * scale) / 2;
+            const yOffset = (height - sheet.length * scale) / 2;
+
+            this.konvaStage = new Konva.Stage({
+                container: 'konva-canvas',
+                width: width,
+                height: height
+            });
+
+            const layer = new Konva.Layer();
+            this.konvaStage.add(layer);
+
+            const background = new Konva.Rect({
+                x: xOffset,
+                y: yOffset,
+                width: sheet.width * scale,
+                height: sheet.length * scale,
+                fill: 'white',
+                stroke: '#cbd5e1',
+                strokeWidth: 2,
+                shadowColor: 'black',
+            });
+            layer.add(background);
+
+            sheet.parts.forEach(part => {
+                const rect = new Konva.Rect({
+                    x: xOffset + (part.x * scale),
+                    y: yOffset + (part.y * scale),
+                    width: part.w * scale,
+                    height: part.h * scale,
+                    fill: '#3b82f622',
+                    stroke: '#2563eb',
+                    strokeWidth: 1.5,
+                });
+                layer.add(rect);
+            });
+
+            layer.draw();
+        }
     }));
 });

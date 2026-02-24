@@ -1,5 +1,33 @@
-<div class="card bg-white shadow-xl border-2 border-primary/10 min-h-[600px] flex items-center justify-center">
-    <div class="text-center">
-        <p class="text-base-content/30 font-bold italic tracking-widest uppercase">Plan Rendering Placeholder</p>
+<div class="flex flex-col gap-4">
+    <div class="flex items-center justify-between bg-base-200 p-2 rounded-xl border border-base-300">
+        <button @click="currentSheetIndex = Math.max(0, currentSheetIndex - 1)" :disabled="currentSheetIndex === 0"
+            class="btn btn-circle btn-sm btn-ghost disabled:opacity-30">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+        </button>
+
+        <div class="flex flex-col items-center">
+            <span class="text-[10px] uppercase font-bold opacity-50">Current Sheet</span>
+            <div class="flex items-center gap-2">
+                <span class="font-black text-lg" x-text="currentSheetIndex + 1"></span>
+                <span class="opacity-30">/</span>
+                <span class="opacity-50" x-text="optimizationResults.sheets.length"></span>
+            </div>
+        </div>
+
+        <button @click="currentSheetIndex = Math.min(optimizationResults.sheets.length - 1, currentSheetIndex + 1)"
+            :disabled="currentSheetIndex === optimizationResults.sheets.length - 1"
+            class="btn btn-circle btn-sm btn-ghost disabled:opacity-30">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+        </button>
+    </div>
+
+    <div x-init="drawCanvas()" class="w-full h-full flex justify-center bg-slate-100">
+        <div id="konva-canvas"></div>
     </div>
 </div>
