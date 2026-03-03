@@ -1,0 +1,82 @@
+<div id="stock-manager" class="bg-base-100 rounded-2xl border border-base-200 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="table table-zebra w-full border-separate border-spacing-0">
+            <thead>
+                <tr class="bg-base-200/50">
+                    <th class="text-xs uppercase opacity-60">Material</th>
+                    <th class="text-xs uppercase opacity-60 text-center">Dimensions (mm)</th>
+                    <th class="text-xs uppercase opacity-60 text-center">Qty</th>
+                    <th class="text-xs uppercase opacity-60">Label</th>
+                    <th class="text-xs uppercase opacity-60 text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="stock-rows-container">
+                {% for sheet in stock_sheets %}
+                    {% include "inventory/partials/stock/stock_row.html" %}
+                {% empty %}
+                    <tr id="no-stock-row">
+                        <td colspan="5" class="text-center py-10 opacity-50 italic">
+                            No stock sheets added yet.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="p-4 border-t-4 border-primary/10 bg-base-200/30">
+        <form hx-post="{% url 'add_stock' %}" hx-target="#stock-rows-container" hx-swap="beforeend"
+            hx-on::after-request="if(event.detail.successful) { 
+                this.reset(); 
+                if(document.getElementById('no-stock-row')) document.getElementById('no-stock-row').remove(); 
+            }">
+            <div class="flex gap-3 items-end">
+                <div class="flex-1">
+                    <label class="label py-0">
+                        <span class="label-text text-[10px] font-black uppercase">Material</span>
+                    </label>
+                    <select name="material" class="select select-sm select-bordered w-full font-bold">
+                        <option value="">---</option>
+                        {% for m in materials %}
+                            <option value="{{ m.id }}">{{ m.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="label py-0">
+                        <span class="label-text text-[10px] font-black uppercase">Dimensions (mm)</span>
+                    </label>
+                    <div class="flex items-center gap-1">
+                        <input type="number" name="length" placeholder="Lenght" required
+                            class="input input-sm input-bordered w-20 text-center font-bold"
+                            @input="$el.value = Math.abs($el.value)">
+                        <span class="opacity-30">×</span>
+                        <input type="number" name="width" placeholder="Width" required
+                            class="input input-sm input-bordered w-20 text-center font-bold"
+                            @input="$el.value = Math.abs($el.value)">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="label py-0">
+                        <span class="label-text text-[10px] font-black uppercase">Qty</span>
+                    </label>
+                    <input type="number" name="quantity" value="1" min="1"
+                        class="input input-sm input-bordered w-16 text-center font-bold"
+                        @input="$el.value = Math.max(1, Math.floor(Math.abs($el.value)) || 1)">
+                </div>
+
+                <div class="flex-[0.5]">
+                    <label class="label py-0">
+                        <span class="label-text text-[10px] font-black uppercase">Label</span>
+                    </label>
+                    <input type="text" name="label" placeholder="Optional..."
+                        class="input input-sm input-bordered w-full text-xs">
+                </div>
+
+                <button class="btn btn-primary btn-sm px-6 font-black uppercase shadow-md">Add to Stock</button>
+            </div>
+        </form>
+    </div>
+</div>

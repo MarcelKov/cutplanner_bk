@@ -1,3 +1,9 @@
+import { save, load, optimize } from './modules/api.js';
+import { getEmptyPanel, getEmptyStock, getDefaultSettings, getEmptyResults } from './modules/defaults.js';
+import { removeItem } from './modules/actions.js';
+import { getEdgeBandingCount, parseSafeNumber, handleSelectChange, getGroupedParts } from './modules/utils.js';
+import { renderSheet } from './modules/canvas.js';
+
 document.addEventListener('alpine:init', () => {
     Alpine.data('plannerData', () => ({
         projectId: Alpine.$persist(null),
@@ -10,8 +16,6 @@ document.addEventListener('alpine:init', () => {
         currentPanel: null,
         currentSheetIndex: 0,
 
-        Materials: Alpine.$persist([]),
-        EdgeBandings: Alpine.$persist([]),
         panels: Alpine.$persist([]),
         stockSheets: Alpine.$persist([]),
 
@@ -20,7 +24,6 @@ document.addEventListener('alpine:init', () => {
             unfitted: [],
             stats: {
                 utilization: 0,
-                total_waste: 0
             }
         }),
 
@@ -28,11 +31,9 @@ document.addEventListener('alpine:init', () => {
             showLabels: false,
             showEdgeBanding: false,
             showMaterials: false,
-            showGrainDirection: false,
             showTrimSettings: false,
             bladeThickness: 0.0,
             optimizationPriority: 'waste',
-            useOnlyOneSheet: false,
             trim: {
                 top: 0,
                 bottom: 0,
@@ -50,47 +51,20 @@ document.addEventListener('alpine:init', () => {
             });
         },
 
-        addPanel() {
-            this.panels.push({
-                label: '', length: 0, width: 0, quantity: 1,
-                material: '', grain_direction: 'none',
-                edge_top: '', edge_bottom: '', edge_left: '', edge_right: ''
-            });
-        },
-
-        addStock() {
-            this.stockSheets.push({
-                label: '', length: 0, width: 0, quantity: 1,
-                material: '', grain_direction: 'none'
-            });
-        },
+        addPanel() { this.panels.push(getEmptyPanel()); },
+        addStock() { this.stockSheets.push(getEmptyStock()); },
 
         resetProject() {
-            if (confirm('Are you sure you want to start a new blank project? This will delete all unsaved data.')) {
-                this.projectId = null;
-                this.projectName = '';
-                this.isProjectSaving = false;
-                this.panels = [];
-                this.stockSheets = [];
-                this.Materials = [];
-                this.EdgeBandings = [];
-                this.addPanel();
-                this.addStock();
+            if (!confirm('Are you sure you want to start a new blank project? This will delete all unsaved data.')) return;
 
-                this.optimizationResults = { sheets: [], unfitted: [], stats: {} };
+            this.projectId = null;
+            this.projectName = '';
+            this.isProjectSaving = false;
 
-                this.settings = {
-                    showLabels: false,
-                    showEdgeBanding: false,
-                    showMaterials: false,
-                    showGrainDirection: false,
-                    showTrimSettings: false,
-                    bladeThickness: 0.0,
-                    optimizationPriority: 'waste',
-                    useOnlyOneSheet: false,
-                    trim: { top: 0, bottom: 0, left: 0, right: 0 }
-                };
-            }
+            this.panels = [getEmptyPanel()];
+            this.stockSheets = [getEmptyStock()];
+            this.optimizationResults = getEmptyResults();
+            this.settings = getDefaultSettings();
         },
 
         handleProjectDeletion(deletedId) {
@@ -110,140 +84,68 @@ document.addEventListener('alpine:init', () => {
             const validPanels = this.panels.filter(p => parseFloat(p.length) > 0 && parseFloat(p.width) > 0);
             const validSheets = this.stockSheets.filter(s => parseFloat(s.length) > 0 && parseFloat(s.width) > 0);
 
-            if (validPanels.length === 0) {
-                this.errorMessage = "Please enter at least 1 panel!";
+            if (validPanels.length === 0 || validSheets.length === 0) {
+                this.errorMessage = validPanels.length === 0 ? "Please enter at least 1 panel!" : "Please enter at least 1 sheet!";
                 setTimeout(() => { this.errorMessage = ''; }, 3000);
                 return;
             }
-            if (validSheets.length === 0) {
-                this.errorMessage = "Please enter at least 1 sheet!";
-                setTimeout(() => { this.errorMessage = ''; }, 3000);
-                return;
-            }
-            this.optimizationResults = { sheets: [], unfitted: [], stats: {} };
+
+            this.optimizationResults = getEmptyResults();
 
             window.location.href = window.resultsUrl;
         },
 
         removePanel(index) {
-            const panel = this.panels[index];
-            const isDirty = panel.label || panel.length || panel.width;
-
-            if (!isDirty || confirm('Delete this panel?')) {
-                this.panels.splice(index, 1);
-                if (this.panels.length === 0) {
-                    this.addPanel();
-                }
-            }
+            removeItem(this.panels, index, 'Delete this panel?', () => this.addPanel());
         },
 
         removeStock(index) {
-            const sheet = this.stockSheets[index];
-            const isDirty = sheet.label || sheet.length || sheet.width;
+            removeItem(this.stockSheets, index, 'Delete this stock sheet?', () => this.addStock());
+        },
 
-            if (!isDirty || confirm('Delete this stock sheet?')) {
-                this.stockSheets.splice(index, 1);
-                if (this.stockSheets.length === 0) {
-                    this.addStock();
-                }
-            }
-        },
-        addMaterial(name) {
-            if (!name) return;
-            this.Materials.push({
-                id: Date.now().toString(),
-                name: name
-            });
-        },
-        addEdgeBanding(name) {
-            if (!name) return;
-            this.EdgeBandings.push({
-                id: Date.now().toString(),
-                name: name
-            });
-        },
-        getEdgeBandingCount(panel) {
-            let count = 0;
-            if (panel.edge_top) count++;
-            if (panel.edge_bottom) count++;
-            if (panel.edge_left) count++;
-            if (panel.edge_right) count++;
-            return count;
-        },
         validateNumber(obj, field) {
-            const val = parseFloat(obj[field]);
-            obj[field] = isNaN(val) ? 0 : Math.abs(val);
+            obj[field] = parseSafeNumber(obj[field]);
         },
 
         validateConfig(field, isTrim = false) {
-            if (isTrim) {
-                this.settings.trim[field] = isNaN(parseFloat(this.settings.trim[field])) ? 0 : Math.abs(this.settings.trim[field]);
-            } else {
-                this.settings[field] = isNaN(parseFloat(this.settings[field])) ? 0 : Math.abs(this.settings[field]);
-            }
+            const target = isTrim ? this.settings.trim : this.settings;
+            target[field] = parseSafeNumber(target[field]);
         },
-        handleMaterialChange(item, event) {
-            const value = event.target.value;
-            if (value === 'ADD_NEW') {
-                material_modal.showModal();
-                event.target.value = item.material || '';
-            } else {
-                item.material = value;
-            }
-        },
-        handleEdgeBandingChange(panel, side, event) {
-            const value = event.target.value;
-            const field = 'edge_' + side;
 
-            if (value === 'ADD_NEW_EB') {
-                eb_modal.showModal();
-                event.target.value = panel[field] || '';
-            } else {
-                panel[field] = value;
-            }
+        handleMaterialChange(item, event) {
+            handleSelectChange(item, 'material', event);
         },
+
+        handleEdgeBandingChange(panel, side, event) {
+            handleSelectChange(panel, 'edge_' + side, event);
+        },
+
+        getEdgeBandingCount(panel) {
+            return getEdgeBandingCount(panel);
+        },
+        getGroupedParts(parts) {
+            return getGroupedParts(parts);
+        },
+
         async saveProject(newName = null) {
             if (this.isProjectSaving) return;
             this.isProjectSaving = true;
 
-            const idToSend = newName ? null : this.projectId;
-            const nameToSend = newName || this.projectName || "Unnamed Project";
-
             const payload = {
-                id: idToSend,
-                name: nameToSend,
+                id: newName ? null : this.projectId,
+                name: newName || this.projectName || "Unnamed Project",
                 data: {
                     panels: this.panels,
                     stockSheets: this.stockSheets,
-                    materials: this.Materials,
-                    edgeBandings: this.EdgeBandings,
                     settings: this.settings
                 }
             };
 
             try {
-                const response = await fetch('/api/save-project', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    console.error('Validation Error Details:', errorData);
-                    throw new Error(JSON.stringify(errorData.detail));
-                }
-
-                const result = await response.json();
-
+                const result = await save(payload);
                 this.projectId = result.id;
                 this.projectName = result.name;
-
                 alert(`Project "${this.projectName}" was saved.`);
-
             } catch (err) {
                 console.error('Save error:', err);
                 alert('Error while saving');
@@ -251,15 +153,11 @@ document.addEventListener('alpine:init', () => {
                 this.isProjectSaving = false;
             }
         },
-
         async loadProject(id) {
             if (!id) return;
 
             try {
-                const response = await fetch(`/api/project/${id}`);
-                if (!response.ok) throw new Error('Failed to load project');
-
-                const result = await response.json();
+                const result = await load(id);
                 const d = result.data;
 
                 this.projectId = result.id;
@@ -267,9 +165,7 @@ document.addEventListener('alpine:init', () => {
 
                 this.panels = d.panels || [];
                 this.stockSheets = d.stockSheets || [];
-                this.Materials = d.materials || [];
-                this.EdgeBandings = d.edgeBandings || [];
-
+                
                 if (d.settings) {
                     this.settings = d.settings;
                 }
@@ -281,10 +177,10 @@ document.addEventListener('alpine:init', () => {
                 alert('Error while loading project data.');
             }
         },
-
         async generatePlan() {
             if (this.optimizationResults && this.optimizationResults.sheets.length > 0) {
                 console.log("Using old data");
+                this.$nextTick(() => this.drawCanvas());
                 return;
             }
             const validPanels = this.panels.filter(p => parseFloat(p.length) > 0 && parseFloat(p.width) > 0);
@@ -298,29 +194,14 @@ document.addEventListener('alpine:init', () => {
 
             this.isOptimizing = true;
 
-            const payload = {
-                panels: validPanels,
-                stockSheets: validSheets,
-                settings: this.settings
-            };
-
             try {
-                const response = await fetch('/api/optimize', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || "Error while optimazing");
-                }
-
-                this.optimizationResults = await response.json();
-
+                const payload = {
+                    panels: validPanels,
+                    stockSheets: validSheets,
+                    settings: this.settings
+                };
+                this.optimizationResults = await optimize(payload);
+                this.$nextTick(() => this.drawCanvas());
             } catch (error) {
                 console.error("Nesting Error:", error);
                 this.errorMessage = "Unable to generate plan.";
@@ -328,75 +209,12 @@ document.addEventListener('alpine:init', () => {
                 this.isOptimizing = false;
             }
         },
-        getGroupedParts(parts) {
-            const grouped = {};
-            parts.forEach(p => {
-                const key = `${p.label}-${p.w}-${p.h}`;
-                if (!grouped[key]) {
-                    grouped[key] = {
-                        label: p.label,
-                        w: p.w,
-                        h: p.h,
-                        count: 0
-                    };
-                }
-                grouped[key].count++;
-            });
-            return Object.values(grouped);
-        },
         drawCanvas() {
             if (this.konvaStage) {
                 this.konvaStage.destroy();
             }
-            const sheet = this.optimizationResults.sheets[this.currentSheetIndex];
-            const container = document.getElementById('konva-canvas');
-
-            const width = container.offsetWidth || 600;
-            const height = container.offsetHeight || 600;
-
-            const scale = Math.min(
-                (width * 0.9) / sheet.width,
-                (height * 0.9) / sheet.length
-            );
-
-            const xOffset = (width - sheet.width * scale) / 2;
-            const yOffset = (height - sheet.length * scale) / 2;
-
-            this.konvaStage = new Konva.Stage({
-                container: 'konva-canvas',
-                width: width,
-                height: height
-            });
-
-            const layer = new Konva.Layer();
-            this.konvaStage.add(layer);
-
-            const background = new Konva.Rect({
-                x: xOffset,
-                y: yOffset,
-                width: sheet.width * scale,
-                height: sheet.length * scale,
-                fill: 'white',
-                stroke: '#cbd5e1',
-                strokeWidth: 2,
-                shadowColor: 'black',
-            });
-            layer.add(background);
-
-            sheet.parts.forEach(part => {
-                const rect = new Konva.Rect({
-                    x: xOffset + (part.x * scale),
-                    y: yOffset + (part.y * scale),
-                    width: part.w * scale,
-                    height: part.h * scale,
-                    fill: '#3b82f622',
-                    stroke: '#2563eb',
-                    strokeWidth: 1.5,
-                });
-                layer.add(rect);
-            });
-
-            layer.draw();
+            const sheet = this.optimizationResults?.sheets?.[this.currentSheetIndex];
+            this.konvaStage = renderSheet(sheet, 'konva-canvas');
         }
     }));
 });

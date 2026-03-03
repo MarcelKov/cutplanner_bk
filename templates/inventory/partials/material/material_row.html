@@ -1,0 +1,32 @@
+<tr id="material-{{ material.id }}" class="hover:bg-base-200/30 transition-colors">
+    <td class="font-bold text-base-content">{{ material.name }}</td>
+    <td class="text-center font-mono">{{ material.thickness }} mm</td>
+    <td class="text-center">
+        <span class="badge badge-outline badge-sm uppercase font-bold px-3 py-2 
+            {% if material.grain == 'none' %}badge-ghost opacity-50{% else %}badge-primary{% endif %}">
+            {{ material.grain }}
+        </span>
+    </td>
+    <td class="text-center">
+        {% if material.price_per_m2 %}
+        <span class="font-semibold">{{ material.price_per_m2 }}</span>
+        {% else %}
+        <span class="opacity-30">—</span>
+        {% endif %}
+    </td>
+    <td class="text-right">
+        <div class="flex justify-end gap-2">
+            <button class="btn btn-ghost btn-xs text-primary" 
+                    hx-get="{% url 'edit_material' material.id %}"
+                    hx-target="#material-{{ material.id }}"
+                    hx-swap="outerHTML">
+                Edit
+            </button>
+            
+            <button class="btn btn-ghost btn-xs text-error" hx-delete="{% url 'delete_material' material.id %}"
+                hx-confirm="Delete this material?" hx-target="#material-{{ material.id }}" hx-swap="outerHTML">
+                ✕ 
+            </button>
+        </div>
+    </td>
+</tr>

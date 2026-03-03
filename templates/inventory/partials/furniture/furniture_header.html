@@ -1,0 +1,26 @@
+<div id="furniture-header-{{ furniture.id }}"
+    class="p-4 border-b border-base-200 flex justify-between items-center bg-base-200/20">
+    <div>
+        <h2 class="text-xl font-black uppercase">{{ furniture.name }}</h2>
+    </div>
+
+    <div class="flex items-center gap-2">
+        <button class="btn btn-ghost btn-xs text-primary font-bold uppercase opacity-50 hover:opacity-100"
+            hx-get="{% url 'edit_furniture_name' furniture.id %}" hx-target="#furniture-header-{{ furniture.id }}"
+            hx-swap="outerHTML">
+            Edit Name
+        </button>
+
+        <div class="divider divider-horizontal mx-0 w-1 opacity-20"></div>
+
+        <button class="btn btn-error btn-ghost btn-xs font-bold uppercase"
+            hx-delete="{% url 'delete_furniture' furniture.id %}"
+            hx-confirm="Delete entire template '{{ furniture.name }}'?" hx-target="#furn-item-{{ furniture.id }}"
+            hx-swap="outerHTML" hx-on::after-request="if(event.detail.successful) { 
+                    selectedFurniture = null; 
+                    document.getElementById('furniture-detail').innerHTML = '<div class=\'flex items-center justify-center h-full opacity-30 italic\'><p>Select a template to view or edit parts</p></div>';
+                }">
+            Delete Template
+        </button>
+    </div>
+</div>

@@ -58,5 +58,8 @@ def calculate_nesting(data_schema):
 
     return {
         "sheets": used_sheets,
-        "unfitted": unfitted_parts
+        "unfitted": unfitted_parts,
+        "stats": {
+        "utilization": 85, # placeholder
+        }
     }

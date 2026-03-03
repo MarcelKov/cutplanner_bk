@@ -1,0 +1,47 @@
+<tr id="stock-row-{{ sheet.id }}" class="bg-base-200" hx-include="this">
+    <td>
+        <select name="material" class="select select-bordered select-sm w-full font-bold">
+            <option value="">No material</option>
+            {% for m in materials %}
+            <option value="{{ m.id }}" {% if sheet.material.id == m.id %}selected{% endif %}>{{ m.name }}</option>
+            {% endfor %}
+        </select>
+    </td>
+    <td class="text-center">
+        <div class="flex gap-1 items-center justify-center">
+            <input type="number" name="length" value="{{ sheet.length|stringformat:'.1f' }}" step="0.1"
+                class="input input-bordered input-sm w-20 text-center font-mono" required
+                @input="$el.value = Math.abs($el.value)">
+            <span class="opacity-30">×</span>
+            <input type="number" name="width" value="{{ sheet.width|stringformat:'.1f' }}" step="0.1"
+                class="input input-bordered input-sm w-20 text-center font-mono" required
+                @input="$el.value = Math.abs($el.value)">
+        </div>
+    </td>
+    <td class="text-center">
+        <input type="number" name="quantity" value="{{ sheet.quantity }}" min="1"
+            class="input input-bordered input-sm w-16 text-center"
+            @input="$el.value = Math.max(1, Math.floor(Math.abs($el.value)) || 1)">
+    </td>
+    <td>
+        <input type="text" name="label" value="{{ sheet.label }}"
+            class="input input-bordered input-sm w-full text-xs">
+    </td>
+    <td class="text-right">
+        <div class="flex justify-end gap-2 px-2">
+            <button class="btn btn-primary btn-xs font-black uppercase" 
+                hx-post="{% url 'edit_stock' sheet.id %}"
+                hx-target="#stock-row-{{ sheet.id }}" 
+                hx-swap="outerHTML">
+                Save
+            </button>
+            <button type="button" class="btn btn-ghost btn-xs font-black uppercase" 
+                hx-get="{% url 'get_stock_row' sheet.id %}"
+                hx-params="none" 
+                hx-target="#stock-row-{{ sheet.id }}" 
+                hx-swap="outerHTML">
+                Cancel
+            </button>
+        </div>
+    </td>
+</tr>

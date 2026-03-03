@@ -1,0 +1,34 @@
+<tr id="edge-{{ edge.id }}" class="bg-base-200/50">
+    <td>
+        <input type="text" name="name" value="{{ edge.name }}" 
+               class="input input-bordered input-sm w-full font-bold">
+    </td>
+    <td class="text-center font-mono">
+        <input type="number" name="thickness" value="{{ edge.thickness|stringformat:'.1f' }}" step="0.1" 
+               class="input input-bordered input-sm w-20 text-center font-mono"
+               @input="$el.value = Math.abs($el.value)">
+    </td>
+    <td class="text-center">
+        <input type="number" name="price" value="{{ edge.price_per_m|stringformat:'.2f' }}" step="0.01" 
+               class="input input-bordered input-sm w-24 text-center font-semibold"
+               @input="$el.value = Math.abs($el.value)">
+    </td>
+    <td class="text-right">
+        <div class="flex justify-end gap-2 px-2">
+            <button type="button" class="btn btn-primary btn-xs"
+                    hx-post="{% url 'edit_edge' edge.id %}" 
+                    hx-include="closest tr"
+                    hx-target="#edge-{{ edge.id }}"
+                    hx-swap="outerHTML">
+                Save
+            </button>
+            <button type="button" class="btn btn-ghost btn-xs"
+                    hx-get="{% url 'get_edge_row' edge.id %}"
+                    hx-params="none"
+                    hx-target="#edge-{{ edge.id }}"
+                    hx-swap="outerHTML">
+                Cancel
+            </button>
+        </div>
+    </td>
+</tr>

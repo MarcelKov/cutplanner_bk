@@ -1,0 +1,23 @@
+<div class="flex gap-6 h-[70vh]" x-data="{ selectedFurniture: null }">
+    <div class="w-72 flex flex-col bg-base-100 rounded-2xl border border-base-200 shadow-sm overflow-hidden">
+        <div class="p-4 border-b border-base-200 bg-base-200/50 flex justify-between items-center">
+            <span class="text-[10px] font-black uppercase opacity-60">Templates</span>
+            <button class="btn btn-ghost btn-xs text-primary font-bold" @click="furniture_add_modal.showModal()">+
+                New</button>
+        </div>
+
+        <div class="overflow-y-auto flex-1 p-2 space-y-1" id="furniture-list" hx-get="{% url 'get_furniture_list' %}"
+            hx-trigger="furnitureNameChanged from:body">
+            {% include "inventory/partials/furniture/furniture_list_loop.html" %}
+        </div>
+    </div>
+
+    <div id="furniture-detail"
+        class="flex-1 bg-base-100 rounded-2xl border border-base-200 shadow-sm overflow-hidden flex flex-col relative">
+        <div class="flex flex-col items-center justify-center h-full opacity-30 italic">
+            <p>Select a template to view or edit parts</p>
+        </div>
+    </div>
+</div>
+
+{% include "inventory/partials/furniture/furniture_add_modal.html" %}

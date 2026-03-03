@@ -1,34 +1,39 @@
 <dialog id="banding_modal" class="modal">
-    <div class="modal-box">
-        <h3 class="font-bold text-lg text-primary mb-4">Edge Banding</h3>
-        <template x-if="currentPanel">
-            <div class="space-y-4">
-                <template x-for="side in ['top', 'bottom', 'left', 'right']" :key="side">
-                    <div class="form-control w-full">
-                        <label class="label py-1">
-                            <span class="label-text text-[10px] uppercase font-black text-black"
-                                x-text="'Edge ' + side"></span>
-                        </label>
+    <div class="modal-box max-w-sm">
+        <h3 class="font-black text-xl mb-6">Add New Edge Banding</h3>
 
-                        <select class="select select-bordered select-sm w-full font-bold text-black"
-                            :value="currentPanel['edge_' + side]"
-                            @change="handleEdgeBandingChange(currentPanel, side, $event)">
+        <form hx-post="{% url 'add_edge' %}" 
+              hx-target="#edge-table-body" 
+              hx-swap="beforeend"
+              hx-on::after-request="this.reset()"
+              @submit.prevent="banding_modal.close()" 
+              class="space-y-4">
 
-                            <option value="">None</option>
-
-                            <template x-for="eb in EdgeBandings" :key="eb.id">
-                                <option :value="eb.id" x-text="eb.name"></option>
-                            </template>
-
-                            <option value="ADD_NEW_EB" class="text-primary font-black italic">+ Add New</option>
-                        </select>
-                    </div>
-                </template>
+            <div class="form-control">
+                <label class="label text-[10px] uppercase font-black">Edge Name</label>
+                <input type="text" name="name" class="input input-bordered w-full font-bold" required>
             </div>
-        </template>
-        <div class="modal-action mt-6">
-            <button class="btn btn-primary btn-sm font-black uppercase" @click="banding_modal.close()">OK</button>
-        </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="form-control">
+                    <label class="label text-[10px] uppercase font-black">Thickness (mm)</label>
+                    <input type="number" name="thickness" step="0.1" min="0"
+                        class="input input-bordered w-full font-bold text-center" required
+                        @input="$el.value = Math.abs($el.value)">
+                </div>
+                <div class="form-control">
+                    <label class="label text-[10px] uppercase font-black">Price / m</label>
+                    <input type="number" name="price" step="0.01" min="0"
+                        class="input input-bordered w-full font-bold text-center"
+                        @input="$el.value = Math.abs($el.value)">
+                </div>
+            </div>
+
+            <div class="modal-action">
+                <button type="button" class="btn btn-ghost" @click="banding_modal.close()">Cancel</button>
+                <button type="submit" class="btn btn-primary px-8 text-white">Create</button>
+            </div>
+        </form>
     </div>
     <form method="dialog" class="modal-backdrop">
         <button>close</button>

@@ -21,21 +21,15 @@
     </td>
 
     <td x-show="settings.showMaterials">
-        <select :value="panel.material" class="select select-bordered select-sm w-full font-bold text-black"
-            @change="handleMaterialChange(panel, $event)">
+        <select :value="panel.material" @change="handleMaterialChange(panel, $event)"
+            class="select select-bordered select-sm w-full font-bold text-black">
             <option value="">---</option>
-            <template x-for="mat in Materials" :key="mat.id">
-                <option :value="mat.id" x-text="mat.name"></option>
-            </template>
-            <option value="ADD_NEW" class="font-black text-primary italic">Add New Material</option>
-        </select>
-    </td>
 
-    <td x-show="settings.showGrainDirection">
-        <select x-model="panel.grain_direction" class="select select-bordered select-sm w-full">
-            {% for value, label in grain_choices %}
-            <option value="{{ value }}">{{ label }}</option>
+            {% for mat in materials %}
+            <option value="{{ mat.id }}">{{ mat.name }} ({{ mat.thickness }} mm)</option>
             {% endfor %}
+
+            <option value="ADD_NEW" class="font-black text-primary italic">Add New Material</option>
         </select>
     </td>
 
@@ -44,7 +38,7 @@
             <span class="text-xs font-bold text-black" x-text="getEdgeBandingCount(panel) + '/4'"></span>
             <button type="button"
                 class="w-6 h-6 flex items-center justify-center bg-secondary text-secondary-content rounded shadow-sm hover:bg-secondary-focus transition-colors font-bold text-lg p-0"
-                @click="currentPanel = panel; banding_modal.showModal()">
+                @click="currentPanel = panel; eb_modal.showModal()">
                 +
             </button>
         </div>

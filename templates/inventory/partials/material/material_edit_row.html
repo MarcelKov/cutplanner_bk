@@ -1,0 +1,35 @@
+<tr id="material-{{ material.id }}" class="bg-base-200" hx-include="this">
+    <td>
+        <input type="text" name="name" value="{{ material.name }}"
+            class="input input-bordered input-sm w-full font-bold" required>
+    </td>
+    <td class="text-center">
+        <input type="number" name="thickness" value="{{ material.thickness|stringformat:'.1f' }}" step="0.1"
+            class="input input-bordered input-sm w-20 text-center font-mono" required
+            @input="$el.value = Math.abs($el.value)">
+    </td>
+    <td class="text-center">
+        <select name="grain" class="select select-bordered select-sm font-bold">
+            {% for val, label in grain_choices %}
+            <option value="{{ val }}" {% if material.grain == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </td>
+    <td class="text-center">
+        <input type="number" name="price" value="{{ material.price_per_m2|stringformat:'.2f' }}" step="0.01" min="0"
+            class="input input-bordered input-sm w-24 text-center font-semibold"
+            @input="$el.value = Math.abs($el.value)">
+    </td>
+    <td class="text-right">
+        <div class="flex justify-end gap-2 px-2">
+            <button class="btn btn-primary btn-xs" hx-post="{% url 'edit_material' material.id %}"
+                hx-target="#material-{{ material.id }}" hx-swap="outerHTML">
+                Save
+            </button>
+            <button type="button" class="btn btn-ghost btn-xs" hx-get="{% url 'get_material_row' material.id %}"
+                hx-params="none" hx-target="#material-{{ material.id }}" hx-swap="outerHTML">
+                Cancel
+            </button>
+        </div>
+    </td>
+</tr>

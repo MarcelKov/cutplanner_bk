@@ -1,0 +1,28 @@
+<tr id="edge-{{ edge.id }}" class="hover:bg-base-200/30 transition-colors">
+    <td class="font-bold text-base-content">{{ edge.name }}</td>
+    <td class="text-center font-mono">{{ edge.thickness }} mm</td>
+    <td class="text-center">
+        {% if edge.price_per_m %}
+            <span class="font-semibold">{{ edge.price_per_m }}</span>
+        {% else %}
+            <span class="opacity-30">—</span>
+        {% endif %}
+    </td>
+    <td class="text-right">
+        <div class="flex justify-end gap-2">
+            <button class="btn btn-ghost btn-xs text-primary" 
+                    hx-get="{% url 'edit_edge' edge.id %}"
+                    hx-target="#edge-{{ edge.id }}"
+                    hx-swap="outerHTML">
+                Edit
+            </button>
+            <button class="btn btn-ghost btn-xs text-error" 
+                    hx-delete="{% url 'delete_edge' edge.id %}"
+                    hx-confirm="Delete this edge banding?" 
+                    hx-target="#edge-{{ edge.id }}" 
+                    hx-swap="outerHTML">
+                ✕
+            </button>
+        </div>
+    </td>
+</tr>

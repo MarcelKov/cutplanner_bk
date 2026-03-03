@@ -6,15 +6,15 @@
             <div class="flex flex-col gap-4">
                 <div class="flex justify-between items-end">
                     <span class="text-xs opacity-60 uppercase font-bold text-black">Utilization</span>
-                    <span class="text-2xl font-black" x-text="`${optimizationResults.stats.total_utilization}%` "></span>
+                    <span class="text-2xl font-black" x-text="`${optimizationResults.stats.utilization}%` "></span>
                 </div>
                 <progress class="progress progress-primary w-full h-3" 
-                          :value="optimizationResults.stats.total_utilization" max="100"></progress>
+                          :value="optimizationResults.stats.utilization" max="100"></progress>
                 
                 <div class="grid grid-cols-2 gap-2 pt-2 border-t border-base-200">
                     <div class="flex flex-col">
                         <span class="text-[10px] uppercase font-bold opacity-50">Used Sheets</span>
-                        <span class="text-lg font-bold" x-text="optimizationResults.stats.sheet_count"></span>
+                        <span class="text-lg font-bold" x-text="optimizationResults?.sheets?.length || 0"></span>
                     </div>
                 </div>
             </div>

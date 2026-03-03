@@ -1,6 +1,21 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container py-4">
+    <div class="flex flex-col md:flex-row md:items-end justify-between mb-6 px-2 gap-4">
+        <div class="space-y-1">
+            <h1 class="text-2xl font-bold flex items-center gap-2">
+                <span class="opacity-50 font-medium">Working on:</span>
+                <span x-text="projectName || 'Untitled Project'" class="text-base-content"></span>
+            </h1>
+        </div>
+
+        <div class="flex items-center gap-2 text-xs font-semibold opacity-60">
+            <span x-show="panels.length > 0" x-text="panels.length + ' Panels'"></span>
+            <span x-show="panels.length > 0" class="opacity-30">|</span>
+            <span x-show="stockSheets.length > 0" x-text="stockSheets.length + ' Sheets'"></span>
+        </div>
+    </div>
+
     <div class="card bg-base-100 shadow-xl border border-base-200">
         <div class="card-body p-6">
             <h2 class="card-title text-primary text-sm uppercase tracking-widest mb-4">Configuration</h2>
@@ -17,12 +32,6 @@
                     class="flex items-center gap-3 px-4 py-2 bg-base-200/50 rounded-full border border-base-300 shadow-sm transition-all hover:bg-base-200 cursor-pointer">
                     <input type="checkbox" class="toggle toggle-secondary" x-model="settings.showEdgeBanding" />
                     <span class="label-text font-semibold whitespace-nowrap">Edge Banding</span>
-                </div>
-
-                <div
-                    class="flex items-center gap-3 px-4 py-2 bg-base-200/50 rounded-full border border-base-300 shadow-sm transition-all hover:bg-base-200 cursor-pointer">
-                    <input type="checkbox" class="toggle toggle-secondary" x-model="settings.showGrainDirection" />
-                    <span class="label-text font-semibold whitespace-nowrap">Consider Grain Direction</span>
                 </div>
 
                 <div
@@ -54,12 +63,6 @@
 
                     <div
                         class="flex items-center gap-3 px-4 py-2 bg-base-200/50 rounded-full border border-base-300 shadow-sm transition-all hover:bg-base-200 cursor-pointer">
-                        <input type="checkbox" class="toggle toggle-secondary" x-model="settings.useOnlyOneSheet" />
-                        <span class="label-text font-semibold whitespace-nowrap">Use one sheet only</span>
-                    </div>
-
-                    <div
-                        class="flex items-center gap-3 px-4 py-2 bg-base-200/50 rounded-full border border-base-300 shadow-sm transition-all hover:bg-base-200 cursor-pointer">
                         <input type="checkbox" class="toggle toggle-secondary" x-model="settings.showTrimSettings" />
                         <span class="label-text font-semibold whitespace-nowrap">Trim Edges</span>
                     </div>
@@ -71,28 +74,28 @@
                     <div class="flex flex-col">
                         <label class="text-[10px] uppercase font-black text-black ml-2 mb-1">Top Trim</label>
                         <input type="number" x-model.number="settings.trim.top" min="0"
-                            @change="validateConfig('trimTop')"
+                            @change="validateConfig('top', true)"
                             class="input input-bordered input-sm rounded-xl font-bold text-black focus:border-primary" />
                     </div>
 
                     <div class="flex flex-col">
                         <label class="text-[10px] uppercase font-black text-black ml-2 mb-1">Bottom Trim</label>
                         <input type="number" x-model.number="settings.trim.bottom" min="0"
-                            @change="validateConfig('trimBottom')"
+                            @change="validateConfig('bottom', true)"
                             class="input input-bordered input-sm rounded-xl font-bold text-black focus:border-primary" />
                     </div>
 
                     <div class="flex flex-col">
                         <label class="text-[10px] uppercase font-black text-black ml-2 mb-1">Left Trim</label>
                         <input type="number" x-model.number="settings.trim.left" min="0"
-                            @change="validateConfig('trimLeft')"
+                            @change="validateConfig('left', true)"
                             class="input input-bordered input-sm rounded-xl font-bold text-black focus:border-primary" />
                     </div>
 
                     <div class="flex flex-col">
                         <label class="text-[10px] uppercase font-black text-black ml-2 mb-1">Right Trim</label>
                         <input type="number" x-model.number="settings.trim.right" min="0"
-                            @change="validateConfig('trimRight')"
+                            @change="validateConfig('right', true)"
                             class="input input-bordered input-sm rounded-xl font-bold text-black focus:border-primary" />
                     </div>
                 </div>
@@ -109,11 +112,10 @@
             <thead>
                 <tr>
                     <th x-show="settings.showLabels" class="bg-base-200">Label</th>
-                    <th class="bg-base-200">Length</th>
-                    <th class="bg-base-200">Width</th>
+                    <th class="bg-base-200">Length (mm)</th>
+                    <th class="bg-base-200">Width (mm)</th>
                     <th class="bg-base-200">Qty</th>
                     <th x-show="settings.showMaterials" class="bg-base-200">Material</th>
-                    <th x-show="settings.showGrainDirection" class="bg-base-200">Grain Direction</th>
                     <th x-show="settings.showEdgeBanding" class="bg-base-200">Edge Banding</th>
                     <th class="bg-base-200 text-right">Actions</th>
                 </tr>
@@ -147,11 +149,10 @@
             <thead>
                 <tr>
                     <th x-show="settings.showLabels" class="bg-base-200">Label</th>
-                    <th class="bg-base-200">Length</th>
-                    <th class="bg-base-200">Width</th>
+                    <th class="bg-base-200">Length (mm)</th>
+                    <th class="bg-base-200">Width (mm)</th>
                     <th class="bg-base-200">Qty</th>
                     <th x-show="settings.showMaterials" class="bg-base-200">Material</th>
-                    <th x-show="settings.showGrainDirection" class="bg-base-200">Grain Direction</th>
                     <th class="bg-base-200 text-right">Actions</th>
                 </tr>
             </thead>
@@ -187,8 +188,6 @@
         </div>
     </div>
     <div id="planner_modals">
-        {% include 'cutplanner/partials/dialogs/material_modal.html' %}
-        {% include 'cutplanner/partials/dialogs/banding_modal.html' %}
         {% include 'cutplanner/partials/dialogs/eb_modal.html' %}
     </div>
     <div class="toast toast-end toast-bottom z-[100]">

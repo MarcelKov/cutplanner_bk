@@ -1,0 +1,23 @@
+<div class="overflow-x-auto bg-base-100 rounded-2xl border border-base-200 shadow-sm">
+    <table class="table table-zebra w-full">
+        <thead>
+            <tr class="bg-base-200/50">
+                <th class="text-xs uppercase opacity-60">Name</th>
+                <th class="text-xs uppercase opacity-60 text-center">Thickness (mm)</th>
+                <th class="text-xs uppercase opacity-60 text-center">Price / m</th>
+                <th class="text-xs uppercase opacity-60 text-right">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="edge-table-body">
+            {% for edge in edges %}
+                {% include "inventory/partials/eb/edge_row.html" %}
+            {% empty %}
+                <tr id="no-edges-row">
+                    <td colspan="4" class="text-center py-10 opacity-50 italic">
+                        No edge bandings added yet.
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

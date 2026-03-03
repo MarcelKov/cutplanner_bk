@@ -1,0 +1,60 @@
+<tr id="panel-row-{{ panel.id }}" class="hover:bg-base-200/30 transition-colors">
+    <td class="font-bold text-sm">{{ panel.label }}</td>
+    <td class="text-center font-mono text-xs">{{ panel.length }} × {{ panel.width }} mm</td>
+    <td class="text-center">
+        <span class="badge badge-ghost font-bold">{{ panel.quantity }}x</span>
+    </td>
+    <td>
+        {% if panel.material %}
+        <span class="text-xs font-bold">{{ panel.material.name }}</span>
+        {% else %}
+        <span class="opacity-30 italic text-xs">No Material</span>
+        {% endif %}
+    </td>
+
+    <td class="text-center">
+        <div class="flex items-center justify-center gap-3">
+            <div class="flex gap-0.5">
+                <span class="w-1.5 h-1.5 rounded-full {% if panel.edge_top %}bg-primary{% else %}bg-base-300{% endif %}"
+                    title="Top"></span>
+                <span
+                    class="w-1.5 h-1.5 rounded-full {% if panel.edge_bottom %}bg-primary{% else %}bg-base-300{% endif %}"
+                    title="Bottom"></span>
+                <span
+                    class="w-1.5 h-1.5 rounded-full {% if panel.edge_left %}bg-primary{% else %}bg-base-300{% endif %}"
+                    title="Left"></span>
+                <span
+                    class="w-1.5 h-1.5 rounded-full {% if panel.edge_right %}bg-primary{% else %}bg-base-300{% endif %}"
+                    title="Right"></span>
+            </div>
+
+            {% if panel.edge_top or panel.edge_bottom or panel.edge_left or panel.edge_right %}
+            <button class="btn btn-ghost btn-xs px-1 h-auto min-h-0 opacity-50 hover:opacity-100"
+                hx-get="{% url 'get_panel_edge_detail' panel.id %}" hx-target="#edge-modal-content"
+                hx-on::after-request="edge_detail_modal.showModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+            </button>
+            {% endif %}
+        </div>
+    </td>
+
+    <td class="text-right">
+        <div class="flex justify-end gap-1">
+            <button class="btn btn-ghost btn-xs text-primary px-1"
+                    hx-get="{% url 'edit_panel' panel.id %}"
+                    hx-target="#panel-row-{{ panel.id }}"
+                    hx-swap="outerHTML">
+                    Edit
+            </button>
+
+            <button hx-delete="{% url 'delete_panel' panel.id %}" hx-target="#panel-row-{{ panel.id }}" hx-swap="outerHTML"
+                hx-confirm="Delete this part?" class="btn btn-ghost btn-xs text-error px-1">✕</button>
+        </div>
+    </td>
+</tr>

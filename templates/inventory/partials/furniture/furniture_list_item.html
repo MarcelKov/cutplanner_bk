@@ -1,0 +1,14 @@
+<button 
+    id="furn-item-{{ furn.id }}"
+    hx-get="{% url 'get_furniture_detail' furn.id %}"
+    hx-target="#furniture-detail"
+    class="btn btn-ghost btn-block justify-between font-bold text-left no-animation btn-sm h-12 px-3"
+    :class="selectedFurniture === {{ furn.id }} ? 'btn-active bg-primary/10 text-primary' : ''"
+    @click="selectedFurniture = {{ furn.id }}">
+    
+    <span class="truncate">{{ furn.name }}</span>
+    
+    <div class="flex items-center gap-2">
+        <span class="badge badge-xs opacity-50">{{ furn.parts.count }}</span>
+    </div>
+</button>

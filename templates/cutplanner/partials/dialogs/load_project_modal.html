@@ -15,7 +15,7 @@
                 </button>
 
                 <button class="btn btn-primary px-8" :disabled="!selectedProjectId"
-                    @click="loadProject(selectedProjectId); load_project_modal.close()">
+                    @click="loadProject(selectedProjectId); load_project_modal.close(); if(window.location.pathname !== '/planner/') { window.location.href = window.homeUrl; }">
                     Open Project
                 </button>
             </div>

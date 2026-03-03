@@ -1,0 +1,23 @@
+<dialog id="furniture_add_modal" class="modal">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg mb-4 uppercase">Create Furniture Template</h3>
+        <form hx-post="{% url 'add_furniture' %}" 
+              hx-target="#furniture-list" 
+              hx-swap="afterbegin"
+              hx-on::after-request="if(event.detail.successful) { this.reset(); furniture_add_modal.close(); }">
+            <div class="form-control w-full">
+                <label class="label"><span class="label-text font-bold uppercase text-xs">Template Name</span></label>
+                <input type="text" name="name" placeholder="..." required
+                       class="input input-bordered w-full font-bold">
+            </div>
+
+            <div class="modal-action">
+                <button type="button" class="btn btn-ghost" @click="furniture_add_modal.close()">Cancel</button>
+                <button type="submit" class="btn btn-primary font-black uppercase">Create</button>
+            </div>
+        </form>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+    </form>
+</dialog>

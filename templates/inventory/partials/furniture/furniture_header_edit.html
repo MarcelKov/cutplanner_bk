@@ -1,0 +1,16 @@
+<div id="furniture-header-{{ furniture.id }}" class="p-4 border-b border-base-200 flex justify-between items-center bg-primary/5">
+    <form hx-post="{% url 'edit_furniture_name' furniture.id %}" 
+          hx-target="#furniture-header-{{ furniture.id }}" 
+          hx-swap="outerHTML"
+          class="flex items-center gap-2 flex-1">
+        <input type="text" name="name" value="{{ furniture.name }}" 
+               class="input input-sm input-bordered font-black uppercase flex-1" autofocus>
+        <button type="submit" class="btn btn-primary btn-sm">Save</button>
+        <button type="button" class="btn btn-ghost btn-sm"
+                hx-get="{% url 'get_furniture_header' furniture.id %}"
+                hx-target="#furniture-header-{{ furniture.id }}"
+                hx-swap="outerHTML">
+            Cancel
+        </button>
+    </form>
+</div>

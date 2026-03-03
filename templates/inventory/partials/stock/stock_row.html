@@ -1,0 +1,31 @@
+<tr id="stock-row-{{ sheet.id }}" class="hover:bg-base-200/30 transition-colors">
+    <td class="font-bold">
+        {% if sheet.material %}
+            {{ sheet.material.name }}
+        {% else %}
+            <span class="opacity-30 italic text-xs">No material</span>
+        {% endif %}
+    </td>
+    <td class="text-center font-mono">{{ sheet.length }} × {{ sheet.width }} mm</td>
+    <td class="text-center">
+        <span class="badge badge-outline">{{ sheet.quantity }}x</span>
+    </td>
+    <td class="opacity-70 text-sm">{{ sheet.label|default:"—" }}</td>
+    <td class="text-right">
+        <div class="flex justify-end gap-2">
+            <button class="btn btn-ghost btn-xs text-primary" 
+                    hx-get="{% url 'edit_stock' sheet.id %}"
+                    hx-target="#stock-row-{{ sheet.id }}"
+                    hx-swap="outerHTML">
+                Edit
+            </button>
+            <button class="btn btn-ghost btn-xs text-error"
+                    hx-delete="{% url 'delete_stock' sheet.id %}"
+                    hx-confirm="Delete this sheet?"
+                    hx-target="#stock-row-{{ sheet.id }}"
+                    hx-swap="outerHTML">
+                ✕
+            </button>
+        </div>
+    </td>
+</tr>

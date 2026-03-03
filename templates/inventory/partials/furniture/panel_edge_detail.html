@@ -1,0 +1,23 @@
+<h3 class="font-black text-sm uppercase mb-4 border-b pb-2 px-5 pt-5">Edge Banding Detail</h3>
+<div class="space-y-2 px-5">
+    {% for pos, edge in edges.items %}
+    <div class="flex justify-between items-center text-xs">
+        <span class="font-bold uppercase opacity-50">{{ pos }}:</span>
+        <span class="text-sm font-bold text-base-content text-right">
+            {% if edge %}
+                {{ edge.name }}
+            {% else %}
+                <span class="opacity-20 font-normal italic text-xs leading-none">No edge banding</span>
+            {% endif %}
+        </span>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="modal-action mt-6 p-4 bg-base-200/50">
+    <form method="dialog" class="w-full flex justify-center">
+        <button class="btn btn-primary px-12 text-white uppercase font-black tracking-widest btn-sm">
+            Close
+        </button>
+    </form>
+</div>

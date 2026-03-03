@@ -103,7 +103,9 @@
         {% endblock %}
     </main>
     {% include "cutplanner/partials/dialogs/project_modal.html" %}
+    {% include "cutplanner/partials/dialogs/material_modal.html" %}
     {% include "cutplanner/partials/dialogs/load_project_modal.html" %}
+    {% include 'cutplanner/partials/dialogs/banding_modal.html' %}
 </body>
 <script>
     window.homeUrl = "{% url 'cutting_app' %}";

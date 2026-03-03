@@ -6,3 +6,13 @@
 @plugin "./daisyui.mjs";
 
 @source "../../templates/**/*.html";
+
+@layer components {
+  #no-edges-row:not(:only-child) {
+    display: none !important;
+  }
+
+  #no-materials-row:not(:only-child) {
+    display: none !important;
+  }
+}

@@ -1,23 +1,65 @@
 <dialog id="eb_modal" class="modal">
-    <div class="modal-box" x-data="{ newEBName: '' }">
-        <h3 class="font-bold text-lg text-primary uppercase">Add New Edge Banding</h3>
+    <div class="modal-box">
+        <h3 class="font-bold text-lg text-primary mb-4 text-center">Edge Banding Configuration</h3>
+        <template x-if="currentPanel">
+            <div class="grid grid-cols-2 gap-4">
+                
+                <div class="form-control w-full">
+                    <label class="label py-1 uppercase text-[10px] font-black text-black">Edge Top</label>
+                    <select class="select select-bordered select-sm w-full font-bold text-black text-xs"
+                        :value="currentPanel.edge_top"
+                        @change="handleEdgeBandingChange(currentPanel, 'top', $event)">
+                        <option value="">None</option>
+                        {% for eb in edges %}
+                        <option value="{{ eb.id }}">{{ eb.name }} ({{ eb.thickness }} mm)</option>
+                        {% endfor %}
+                        <option value="ADD_NEW_EB" class="text-primary font-black italic">+ Add New</option>
+                    </select>
+                </div>
 
-        <div class="form-control w-full mt-4">
-            <label class="label">
-                <span class="label-text font-bold text-black opacity-60 uppercase text-[10px]">Edge Banding
-                    Name</span>
-            </label>
-            <input type="text" x-model="newEBName" class="input input-bordered w-full font-bold text-black"
-                placeholder="..."
-                @keydown.enter="if(newEBName) { addEdgeBanding(newEBName); newEBName = ''; eb_modal.close(); }">
-        </div>
+                <div class="form-control w-full">
+                    <label class="label py-1 uppercase text-[10px] font-black text-black">Edge Bottom</label>
+                    <select class="select select-bordered select-sm w-full font-bold text-black text-xs"
+                        :value="currentPanel.edge_bottom"
+                        @change="handleEdgeBandingChange(currentPanel, 'bottom', $event)">
+                        <option value="">None</option>
+                        {% for eb in edges %}
+                        <option value="{{ eb.id }}">{{ eb.name }} ({{ eb.thickness }} mm)</option>
+                        {% endfor %}
+                        <option value="ADD_NEW_EB" class="text-primary font-black italic">+ Add New</option>
+                    </select>
+                </div>
 
-        <div class="modal-action">
-            <button type="button" class="btn btn-sm" @click="eb_modal.close()">Cancel</button>
-            <button type="button" class="btn btn-sm btn-primary font-black uppercase" :disabled="!newEBName"
-                @click="addEdgeBanding(newEBName); newEBName = ''; eb_modal.close();">
-                Save Banding
-            </button>
+                <div class="form-control w-full">
+                    <label class="label py-1 uppercase text-[10px] font-black text-black">Edge Left</label>
+                    <select class="select select-bordered select-sm w-full font-bold text-black text-xs"
+                        :value="currentPanel.edge_left"
+                        @change="handleEdgeBandingChange(currentPanel, 'left', $event)">
+                        <option value="">None</option>
+                        {% for eb in edges %}
+                        <option value="{{ eb.id }}">{{ eb.name }} ({{ eb.thickness }} mm)</option>
+                        {% endfor %}
+                        <option value="ADD_NEW_EB" class="text-primary font-black italic">+ Add New</option>
+                    </select>
+                </div>
+
+                <div class="form-control w-full">
+                    <label class="label py-1 uppercase text-[10px] font-black text-black">Edge Right</label>
+                    <select class="select select-bordered select-sm w-full font-bold text-black text-xs"
+                        :value="currentPanel.edge_right"
+                        @change="handleEdgeBandingChange(currentPanel, 'right', $event)">
+                        <option value="">None</option>
+                        {% for eb in edges %}
+                        <option value="{{ eb.id }}">{{ eb.name }} ({{ eb.thickness }} mm)</option>
+                        {% endfor %}
+                        <option value="ADD_NEW_EB" class="text-primary font-black italic">+ Add New</option>
+                    </select>
+                </div>
+
+            </div>
+        </template>
+        <div class="modal-action mt-6">
+            <button class="btn btn-primary btn-sm font-black uppercase w-full" @click="eb_modal.close()">OK</button>
         </div>
     </div>
     <form method="dialog" class="modal-backdrop">

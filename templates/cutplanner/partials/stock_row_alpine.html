@@ -25,19 +25,11 @@
 
             <option value="">---</option>
 
-            <template x-for="mat in Materials" :key="mat.id">
-                <option :value="mat.id" x-text="mat.name"></option>
-            </template>
+            {% for mat in materials %}
+            <option value="{{ mat.id }}">{{ mat.name }}</option>
+            {% endfor %}
 
             <option value="ADD_NEW" class="font-black text-primary italic">Add New Material</option>
-        </select>
-    </td>
-
-    <td x-show="settings.showGrainDirection">
-        <select x-model="sheet.grain_direction" class="select select-bordered select-sm w-full">
-            {% for value, label in grain_choices %}
-            <option value="{{ value }}">{{ label }}</option>
-            {% endfor %}
         </select>
     </td>
 
