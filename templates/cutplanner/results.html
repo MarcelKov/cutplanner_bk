@@ -1,14 +1,26 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mx-auto p-6" x-init="generatePlan()">
+<div class="container mx-auto p-6" x-data="resultsData" x-init="generatePlan()">
     <div class="flex justify-between items-center mb-8">
         <div>
             <h1 class="text-3xl text-primary  uppercase tracking-tight">Cutting Plan</h1>
         </div>
-        <a href="{% url 'cutting_app' %}" class="btn btn-primary btn-outline">
-            ← Back to Editor
-        </a>
+        <div class="flex gap-2">
+            <button class="btn btn-primary" @click="exportToPDF()" :disabled="isExporting">
+                <span x-show="isExporting" class="loading loading-spinner loading-xs"></span>
+                <svg x-show="!isExporting" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                PDF Export
+            </button>
+
+            <a href="{% url 'cutting_app' %}" class="btn btn-primary btn-outline">
+                ← Back to Editor
+            </a>
+        </div>
     </div>
 
     <template x-if="isOptimizing">
@@ -18,14 +30,9 @@
         </div>
     </template>
 
-    <template x-if="errorMessage">
-        <div class="alert alert-error shadow-lg mb-6">
-            <span x-text="errorMessage"></span>
-        </div>
-    </template>
 
     <div x-show="!isOptimizing && optimizationResults" class="grid grid-cols-1 xl:grid-cols-4 gap-6 items-start">
-        
+
         <aside class="xl:col-span-1 space-y-6">
             {% include 'cutplanner/result_partials/parts_list.html' %}
             {% include 'cutplanner/result_partials/unfitted_list.html' %}
@@ -39,6 +46,13 @@
             {% include 'cutplanner/result_partials/statistics.html' %}
         </aside>
 
+    </div>
+    <div class="toast toast-end toast-bottom z-[100]">
+        <template x-if="errorMessage">
+            <div class="alert alert-error shadow-lg transition-all">
+                <span x-text="errorMessage"></span>
+            </div>
+        </template>
     </div>
 
 </div>

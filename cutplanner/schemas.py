@@ -2,7 +2,6 @@ from ninja import Schema
 from typing import List, Optional
 
 
-
 class TrimSchema(Schema):
     top: float = 0
     bottom: float = 0
@@ -25,7 +24,7 @@ class StockSheetSchema(Schema):
     width: float = 0
     quantity: int = 1
     material: Optional[int] = None
-
+    
 class PanelSchema(Schema):
     label: str = ""
     length: float = 0
@@ -46,3 +45,11 @@ class SaveProjectPayload(Schema):
     id: Optional[int] = None
     name: str
     data: ProjectDataSchema
+
+class ProjectBuildPayload(Schema):
+    furniture_ids: List[int]
+    stock_ids: List[int]
+
+class ProjectBuildResponse(Schema):
+    panels: List[PanelSchema]
+    stockSheets: List[StockSheetSchema]

@@ -1,0 +1,46 @@
+<div class="flex items-center gap-2 h-full"> <template x-for="(sheet, index) in manualLayout.sheets" :key="sheet.uid">
+        <template x-if="index === 0 || manualLayout.sheets[index-1].sheetGroupId !== sheet.sheetGroupId">
+
+            <div class="dropdown dropdown-bottom"> <template x-if="sheet.qty > 1">
+                    <div>
+                        <div tabindex="0" role="button" class="btn btn-sm no-animation gap-2"
+                            :class="manualLayout.sheets[currentSheetIndex].sheetGroupId === sheet.sheetGroupId ? 'btn-primary' : 'btn-ghost bg-base-200'">
+                            <span x-text="sheet.groupLabel"></span>
+                        </div>
+                        <ul tabindex="0"
+                            class="dropdown-content z-[110] menu p-2 shadow-2xl bg-base-100 rounded-box w-52 border border-base-200 mt-2 max-h-64 overflow-y-auto flex-nowrap shadow-xl">
+
+                            <template x-for="(subSheet, subIndex) in manualLayout.sheets">
+                                <template x-if="subSheet.sheetGroupId === sheet.sheetGroupId">
+                                    <li>
+                                        <a @click="switchSheet(subIndex)"
+                                            class="flex justify-between py-2 text-xs transition-all"
+                                            :class="currentSheetIndex === subIndex ? 'active bg-primary text-primary-content' : 'hover:bg-base-200'">
+                                            <div class="flex items-center gap-2">
+                                                <div class="w-1.5 h-1.5 rounded-full bg-current"
+                                                    x-show="currentSheetIndex === subIndex"></div>
+                                                <span x-text="subSheet.label"
+                                                    :class="currentSheetIndex === subIndex ? 'font-bold' : ''"></span>
+                                            </div>
+                                            <span class="text-[10px] opacity-70 font-mono"
+                                                x-text="subSheet.parts.length + (subSheet.parts.length === 1 ? ' pc' : ' pcs')">
+                                            </span>
+                                        </a>
+                                    </li>
+                                </template>
+                            </template>
+                        </ul>
+                    </div>
+                </template>
+
+                <template x-if="sheet.qty === 1">
+                    <button @click="switchSheet(index)" class="btn btn-sm no-animation"
+                        :class="currentSheetIndex === index ? 'btn-primary' : 'btn-ghost bg-base-200'">
+                        <span x-text="sheet.groupLabel"></span>
+                    </button>
+                </template>
+            </div>
+
+        </template>
+    </template>
+</div>

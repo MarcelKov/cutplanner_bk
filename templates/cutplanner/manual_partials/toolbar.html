@@ -1,0 +1,46 @@
+<div class="flex items-center gap-2 px-3 py-2 bg-base-100/90 backdrop-blur-md border border-base-300 rounded-2xl shadow-xl fixed bottom-6 left-1/2 -translate-x-1/2 z-[100]" 
+     x-show="selectedPartUid" 
+     x-transition:enter="transition ease-out duration-200"
+     x-transition:enter-start="opacity-0 translate-y-4"
+     x-transition:enter-end="opacity-100 translate-y-0">
+    
+    <div class="flex items-center gap-1 bg-base-200 p-1 rounded-xl">
+        <div class="flex items-center gap-0">
+            <span class="pl-2 pr-1 text-[10px] font-bold opacity-50 font-mono">X</span>
+            <input type="number" 
+                   x-model.number="selectedPartX" 
+                   @input="syncPos()" 
+                   class="input input-ghost input-xs w-16 focus:bg-base-100 font-mono text-center p-0" 
+                   placeholder="0">
+        </div>
+        <div class="w-[1px] h-4 bg-base-300"></div>
+        <div class="flex items-center gap-0">
+            <span class="pl-2 pr-1 text-[10px] font-bold opacity-50 font-mono">Y</span>
+            <input type="number" 
+                   x-model.number="selectedPartY" 
+                   @input="syncPos()" 
+                   class="input input-ghost input-xs w-16 focus:bg-base-100 font-mono text-center p-0" 
+                   placeholder="0">
+        </div>
+    </div>
+    
+    <div class="w-[1px] h-8 bg-base-300 mx-1"></div>
+    
+    <div class="flex gap-1">
+        <button @click="rotatePart()" 
+                class="btn btn-square btn-ghost btn-xs hover:bg-primary/10 hover:text-primary transition-colors"
+                title="Rotate 90°">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+        </button>
+        
+        <button @click="removePartFromSheet()" 
+                class="btn btn-square btn-ghost btn-xs hover:bg-error/10 hover:text-error transition-colors"
+                title="Remove from sheet">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+        </button>
+    </div>
+</div>

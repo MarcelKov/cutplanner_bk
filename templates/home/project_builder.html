@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-[1600px] mx-auto p-6 h-[calc(100vh-80px)] flex flex-col gap-6"
+     x-data="projectBuilder"> <div class="flex justify-between items-end">
+        <div>
+            <h1 class="text-4xl font-black uppercase tracking-tighter">Project Builder</h1>
+            <p class="opacity-50 font-bold uppercase text-xs italic">
+                Selected: <span x-text="selectedFurniture.length">0</span> Furniture, 
+                <span x-text="selectedStock.length">0</span> Stock Sheets
+            </p>
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'home' %}" class="btn btn-ghost btn-sm font-black uppercase">Cancel</a>
+            <button class="btn btn-primary px-10 font-black uppercase shadow-lg relative" 
+                    @click="buildProject()"
+                    :disabled="selectedFurniture.length === 0 || selectedStock.length === 0 || isProjectSaving">
+                <span :class="{ 'opacity-0': isProjectSaving }">Create Project</span>
+                <template x-if="isProjectSaving">
+                    <span class="loading loading-spinner loading-sm absolute inset-0 m-auto"></span>
+                </template>
+            </button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 overflow-hidden">
+        <div class="flex flex-col bg-base-100 rounded-3xl border border-base-200 shadow-sm overflow-hidden">
+            <div class="p-5 border-b border-base-200 bg-base-200/20 flex justify-between items-center text-primary">
+                <h2 class="font-black uppercase text-sm">Furniture Templates</h2>
+            </div>
+            <div class="overflow-y-auto flex-1 p-4 space-y-3">
+                {% for furn in furniture %}
+                <div class="p-4 rounded-2xl border-2 transition-all cursor-pointer group"
+                     :class="selectedFurniture.includes('{{ furn.id }}') ? 'border-primary bg-primary/5' : 'border-base-200 bg-base-200/10 hover:border-primary/40'"
+                     @click="toggleFurniture('{{ furn.id }}')">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-black uppercase leading-tight"
+                            :class="selectedFurniture.includes('{{ furn.id }}') ? 'text-primary' : ''">{{ furn.name }}</h3>
+                        
+                        <button class="btn btn-circle btn-sm shadow-md transition-all"
+                                :class="selectedFurniture.includes('{{ furn.id }}') ? 'btn-primary' : 'btn-ghost border-base-300'">
+                            <span x-text="selectedFurniture.includes('{{ furn.id }}') ? '✕' : '＋'" class="font-bold"></span>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="flex flex-col bg-base-100 rounded-3xl border border-base-200 shadow-sm overflow-hidden">
+            <div class="p-5 border-b border-base-200 bg-base-200/20 flex justify-between items-center text-secondary">
+                <h2 class="font-black uppercase text-sm">Available Stock Sheets</h2>
+            </div>
+            <div class="overflow-y-auto flex-1 p-4 space-y-3">
+                {% for sheet in stock_sheets %}
+                <div class="p-4 rounded-2xl border-2 transition-all cursor-pointer group"
+                     :class="selectedStock.includes('{{ sheet.id }}') ? 'border-secondary bg-secondary/5' : 'border-base-200 bg-base-200/10 hover:border-secondary/40'"
+                     @click="toggleStock('{{ sheet.id }}')">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="font-black uppercase text-sm"
+                                :class="selectedStock.includes('{{ sheet.id }}') ? 'text-secondary' : ''">{{ sheet.material.name }}</h3>
+                            <p class="font-mono text-xs opacity-70">{{ sheet.length }} × {{ sheet.width }} mm</p>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <span class="font-black text-xl opacity-50" 
+                                  :class="selectedStock.includes('{{ sheet.id }}') ? 'opacity-100 text-secondary' : ''">{{ sheet.quantity }}x</span>
+                            
+                            <button class="btn btn-circle btn-sm shadow-md transition-all"
+                                    :class="selectedStock.includes('{{ sheet.id }}') ? 'btn-secondary' : 'btn-ghost border-base-300'">
+                                <span x-text="selectedStock.includes('{{ sheet.id }}') ? '✕' : '＋'" class="font-bold"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

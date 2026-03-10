@@ -1,74 +1,212 @@
-function calculateLayout(sheet, containerWidth, containerHeight) {
-    const padding = 0.9;
-    const scale = Math.min(
-        (containerWidth * padding) / sheet.width,
-        (containerHeight * padding) / sheet.length
-    );
+export const KonvaRenderer = {
+    calculateLayout(container, sheetWidth, sheetHeight, padding = 40) {
+        const availableW = container.offsetWidth - (padding * 2);
+        const availableH = container.offsetHeight - (padding * 2);
 
-    return {
-        scale: scale,
-        xOffset: (containerWidth - sheet.width * scale) / 2,
-        yOffset: (containerHeight - sheet.length * scale) / 2
-    };
-}
+        const scale = Math.min(availableW / sheetWidth, availableH / sheetHeight);
 
-function drawSheetBackground(layer, sheet, layout) {
-    const background = new Konva.Rect({
-        x: layout.xOffset,
-        y: layout.yOffset,
-        width: sheet.width * layout.scale,
-        height: sheet.length * layout.scale,
-        fill: 'white',
-        stroke: '#cbd5e1',
-        strokeWidth: 2,
-        shadowColor: 'black',
-        shadowBlur: 4,
-        shadowOpacity: 0.1
-    });
-    layer.add(background);
-}
+        return {
+            scale,
+            offsetX: (container.offsetWidth - (sheetWidth * scale)) / 2,
+            offsetY: (container.offsetHeight - (sheetHeight * scale)) / 2
+        };
+    },
 
-function drawParts(layer, parts, layout) {
-    if (!parts || !Array.isArray(parts)) return;
-
-    parts.forEach(function(part) {
-        const rect = new Konva.Rect({
-            x: layout.xOffset + (part.x * layout.scale),
-            y: layout.yOffset + (part.y * layout.scale),
-            width: part.w * layout.scale,
-            height: part.h * layout.scale,
-            fill: '#3b82f622',
-            stroke: '#2563eb',
-            strokeWidth: 1.5,
+    createSheet(width, height, layout) {
+        return new Konva.Rect({
+            x: layout.offsetX,
+            y: layout.offsetY,
+            width: width * layout.scale,
+            height: height * layout.scale,
+            fill: '#ffffff',
+            stroke: '#94a3b8',
+            strokeWidth: 2,
+            shadowBlur: 15,
+            shadowOpacity: 0.1,
+            name: 'sheet-bg'
         });
-        layer.add(rect);
-    });
-}
+    },
 
+    createPart(part, layout, isSelected) {
+        const { scale, offsetX, offsetY } = layout;
+        const pw = part.w * scale;
+        const ph =  part.h * scale;
 
-function renderSheet(sheet, containerId) {
-    const container = document.getElementById(containerId);
-    if (!container || !sheet || !sheet.width) return null;
+        const hue = (part.groupId * 137.5) % 360;
+        const baseFill = `hsla(${hue}, 70%, 60%, 0.4)`;
+        const selectedFill = `hsla(${hue}, 80%, 50%, 0.7)`;
+        const strokeColor = `hsla(${hue}, 80%, 30%, 1)`;
 
-    const width = container.offsetWidth || 600;
-    const height = container.offsetHeight || 600;
+        const group = new Konva.Group({
+            x: offsetX + (part.x * scale),
+            y: offsetY + (part.y * scale),
+            draggable: true,
+            uid: part.uid
+        });
 
-    const layout = calculateLayout(sheet, width, height);
+        // RECTANGLE
+        const rect = new Konva.Rect({
+            width: pw,
+            height: ph,
+            fill: isSelected ? selectedFill : baseFill,
+            stroke: strokeColor,
+            strokeWidth: 1.5,
+            cornerRadius: 1,
+        });
 
-    const stage = new Konva.Stage({
-        container: containerId,
-        width: width,
-        height: height
-    });
+        // MAIN LABEL
+        const mainLabel = new Konva.Text({
+            text: part.label,
+            fontSize: Math.max(10, 12 * scale),
+            fontStyle: 'bold',
+            fontFamily: 'sans-serif',
+            fill: '#1e3a8a',
+            listening: false
+        });
 
-    const layer = new Konva.Layer();
-    stage.add(layer);
+        mainLabel.offsetX(mainLabel.width() / 2);
+        mainLabel.offsetY(mainLabel.height() / 2);
+        mainLabel.x(pw / 2);
+        mainLabel.y(ph / 2);
 
-    drawSheetBackground(layer, sheet, layout);
-    drawParts(layer, sheet.parts, layout);
+        // WIDTH DIMENSION
+        const wText = new Konva.Text({
+            text: part.w.toFixed(1),
+            fontSize: Math.max(8, 9 * scale),
+            fontFamily: 'sans-serif',
+            fill: '#1e3a8a',
+            listening: false
+        });
 
-    layer.draw();
-    return stage;
-}
+        wText.offsetX(wText.width() / 2);
+        wText.x(pw / 2);
+        wText.y(2);
 
-export {renderSheet}
+        // HEIGHT DIMENSION
+        const hText = new Konva.Text({
+            text: part.h.toFixed(1),
+            fontSize: Math.max(8, 9 * scale),
+            fontFamily: 'sans-serif',
+            fill: '#1e3a8a',
+            listening: false
+        });
+
+        hText.offsetY(hText.height() / 2);
+        hText.x(4);
+        hText.y(ph / 2);
+
+        group.add(rect, mainLabel, wText, hText);
+        return group;
+    },
+
+    createGrid(width, height, layout) {
+        const { scale, offsetX, offsetY } = layout;
+        const gridGroup = new Konva.Group({ listening: false });
+
+        const drawLines = (step, stroke, strokeWidth, showLabels) => {
+            for (let x = 0; x <= width; x += step) {
+                const xPos = offsetX + (x * scale);
+                gridGroup.add(new Konva.Line({
+                    points: [xPos, offsetY, xPos, offsetY + (height * scale)],
+                    stroke: stroke,
+                    strokeWidth: strokeWidth,
+                }));
+
+                if (showLabels && x > 0) {
+                    gridGroup.add(new Konva.Text({
+                        x: xPos - 10,
+                        y: offsetY - 15,
+                        text: x.toString(),
+                        fontSize: Math.max(8, 9 * scale),
+                        fill: '#64748b'
+                    }));
+                }
+            }
+
+            for (let y = 0; y <= height; y += step) {
+                const yPos = offsetY + (y * scale);
+                gridGroup.add(new Konva.Line({
+                    points: [offsetX, yPos, offsetX + (width * scale), yPos],
+                    stroke: stroke,
+                    strokeWidth: strokeWidth,
+                }));
+
+                if (showLabels && y > 0) {
+                    gridGroup.add(new Konva.Text({
+                        x: offsetX - 25,
+                        y: yPos - 5,
+                        text: y.toString(),
+                        fontSize: Math.max(8, 9 * scale),
+                        fill: '#64748b'
+                    }));
+                }
+            }
+        };
+
+        drawLines(50, '#cbd5e1', 0.5, false);
+        drawLines(100, '#94a3b8', 1, true);
+
+        return gridGroup;
+    },
+
+    createSheetDimensions(width, height, layout) {
+        const { scale, offsetX, offsetY } = layout;
+        const group = new Konva.Group({ listening: false });
+        const color = '#64748b';
+        const margin = 30;
+
+        const drawDim = (p1, p2, textValue, isVertical) => {
+            const dimGroup = new Konva.Group();
+
+            dimGroup.add(new Konva.Arrow({
+                points: [p1.x, p1.y, p2.x, p2.y],
+                pointerLength: 8,
+                pointerWidth: 6,
+                fill: color,
+                stroke: color,
+                strokeWidth: 1,
+                pointerAtBeginning: true
+            }));
+
+            const label = new Konva.Text({
+                text: `${textValue.toFixed(0)} mm`,
+                fontSize: 12,
+                fontStyle: 'bold',
+                fill: color,
+            });
+
+            // Center the text's origin 
+            label.offsetX(label.width() / 2);
+            label.offsetY(label.height() / 2);
+
+            if (isVertical) {
+                label.x(p1.x + 15);
+                label.y((p1.y + p2.y) / 2);
+                label.rotation(90);
+            } else {
+                label.x((p1.x + p2.x) / 2);
+                label.y(p1.y + 15);
+                label.rotation(0);
+            }
+            dimGroup.add(label);
+
+            return dimGroup;
+        };
+
+        group.add(drawDim(
+            { x: offsetX, y: offsetY + (height * scale) + margin },
+            { x: offsetX + (width * scale), y: offsetY + (height * scale) + margin },
+            width,
+            false
+        ));
+
+        group.add(drawDim(
+            { x: offsetX + (width * scale) + margin, y: offsetY },
+            { x: offsetX + (width * scale) + margin, y: offsetY + (height * scale) },
+            height,
+            true
+        ));
+
+        return group;
+    }
+};

@@ -24,6 +24,15 @@ class SignUpView(CreateView):
     success_url = reverse_lazy('login')
     template_name = 'registration/signup.html'
 
+class ProjectBuilderView(LoginRequiredMixin, TemplateView):
+    template_name = "home/project_builder.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['furniture'] = Furniture.objects.filter(user=self.request.user)
+        context['stock_sheets'] = StockSheet.objects.filter(user=self.request.user, quantity__gt=0)
+        return context
+
 class CuttingAppView(TemplateView):
     template_name = "cutplanner/app_home.html"
     def get_context_data(self, **kwargs):
@@ -42,9 +51,12 @@ class CuttingAppView(TemplateView):
 class CuttingResultsView(TemplateView):
     template_name = 'cutplanner/results.html'
 
+class ManualPlannerView(TemplateView):
+    template_name = 'cutplanner/manual_planner.html'
+
 class ProjectListView(LoginRequiredMixin, ListView):
     model = Project
-    template_name = 'cutplanner/partials/projects_table.html'
+    template_name = 'project_partials/projects_table.html'
     context_object_name = 'projects'
 
     def get_queryset(self):

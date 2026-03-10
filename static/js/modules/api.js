@@ -34,9 +34,23 @@ async function optimize(payload) {
     });
     if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Optimization error");
+        throw new Error(errorData.detail || "Optimization error");
     }
     return response.json();
 }
 
-export { save, load, optimize };
+async function loadFromTemplates(payload) {
+    const response = await fetch('/api/create-from-templates', {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(payload)
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to create project from templates');
+    }
+    return response.json(); 
+}
+
+
+export { save, load, optimize ,loadFromTemplates};

@@ -1,0 +1,21 @@
+<div class="p-4 border-b border-base-300 bg-base-100">
+    <h2 class="font-black text-xs uppercase italic">Unplaced Panels</h2>
+    <p class="text-[9px] opacity-50" x-text="manualLayout.unfitted.length + ' pieces remaining'"></p>
+</div>
+<div class="flex-1 overflow-y-auto p-4 space-y-2">
+    <template x-for="part in manualLayout.unfitted" :key="part.uid">
+        <div @click="addPartToStage(part)" 
+             class="p-3 bg-base-100 rounded-xl border border-base-300 hover:border-primary hover:shadow-md cursor-pointer transition-all group">
+            <div class="flex justify-between items-start">
+                <span class="font-bold text-xs" x-text="part.label"></span>
+                <span class="badge badge-ghost badge-sm text-[10px]" x-text="part.w + ' × ' + part.h"></span>
+            </div>
+        </div>
+    </template>
+
+    <template x-if="manualLayout.unfitted.length === 0">
+        <div class="py-10 text-center opacity-30 italic text-xs">
+            All parts are placed
+        </div>
+    </template>
+</div>

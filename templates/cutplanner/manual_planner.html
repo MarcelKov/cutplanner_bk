@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="grid grid-cols-[18rem_1fr] h-[calc(100vh-80px)] overflow-hidden bg-base-300" x-data="manualPlannerData"
+    x-init="initManualEditor()">
+
+    <aside class="bg-base-200 border-r border-base-300 flex flex-col min-h-0 overflow-hidden">
+        {% include 'cutplanner/manual_partials/parts_list.html' %}
+    </aside>
+
+    <main class="flex flex-col min-h-0 min-w-0 overflow-hidden relative">
+
+        <div class="h-16 bg-base-100 border-b border-base-300 flex items-center justify-between px-4 z-20 shadow-sm">
+            <div class="flex items-center gap-4 flex-1">
+                <div class="flex flex-col border-r border-base-300 pr-4 mr-2 hidden lg:flex">
+                    <h1 class="text-sm font-black uppercase tracking-wider leading-none">Manual Planner</h1>
+                </div>
+                {% include 'cutplanner/manual_partials/sheet_tabs.html' %}
+            </div>
+
+            <div class="flex items-center gap-3">
+                <div class="dropdown dropdown-end">
+                    <div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-square">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                    </div>
+                    <button class="btn btn-ghost btn-sm text-error gap-2" @click="confirmReset()"
+                        title="Clear current sheet">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        <span class="hidden xl:inline text-xs">Reset Sheet</span>
+                    </button>
+                    <div tabindex="0"
+                        class="dropdown-content z-[100] card card-compact w-64 p-2 shadow-2xl bg-base-100 border border-base-200 mt-2 text-sm">
+                        <div class="card-body">
+                            <h3 class="font-bold opacity-50 uppercase text-[10px] mb-2">Snapping Settings</h3>
+                            <div class="form-control">
+                                <label class="label cursor-pointer justify-start gap-3">
+                                    <input type="checkbox" x-model="settings.snapToParts"
+                                        class="checkbox checkbox-xs checkbox-primary">
+                                    <span class="label-text">Snap to Parts</span>
+                                </label>
+                            </div>
+                            <div x-show="settings.snapToParts && settings.snapGrid > 0" x-transition
+                                class="mt-1 p-2 bg-warning/10 border border-warning/20 rounded text-[10px] leading-tight text-warning-content flex gap-2 items-start">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mt-0.5 shrink-0" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                                <span>Grid snapping is disabled while <strong>Snap to Parts</strong> is active.</span>
+                            </div>
+                            <div class="form-control mt-2">
+                                <label class="label pb-0">
+                                    <span class="label-text">Grid Snap: <span class="font-mono font-bold text-primary"
+                                            x-text="settings.snapGrid + 'mm'"></span></span>
+                                </label>
+                                <input type="range" min="0" max="100" step="2" x-model.number="settings.snapGrid"
+                                    class="range range-xs range-primary">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="canvas-parent" class="flex-1 relative bg-base-300 overflow-hidden cursor-crosshair  shadow-inner">
+            <div id="konva-holder" class="absolute inset-0"></div>
+        </div>
+
+        <div class="p-4 bg-base-100 border-t border-base-300 flex justify-end gap-2 z-20 shadow-inner">
+            <button class="btn btn-primary" @click="exportToPDF()" :disabled="isExporting">
+                <span x-show="isExporting" class="loading loading-spinner loading-xs"></span>
+                <svg x-show="!isExporting" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                PDF Export
+            </button>
+            <a href="{% url 'cutting_app' %}" class="btn btn-primary btn-outline">
+                ← Back to Editor
+            </a>
+        </div>
+        {% include 'cutplanner/manual_partials/toolbar.html' %}
+        <div class="toast toast-end toast-bottom z-[100]">
+            <template x-if="errorMessage">
+                <div class="alert alert-error shadow-lg transition-all">
+                    <span x-text="errorMessage"></span>
+                </div>
+            </template>
+        </div>
+    </main>
+</div>
+{% endblock %}

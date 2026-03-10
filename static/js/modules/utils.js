@@ -12,11 +12,13 @@ function handleSelectChange(item, field, event) {
     const value = event.target.value;
 
     if (value === 'ADD_NEW') {
+        event.target.value = item[field] || "";
         window.location.href = "/inventory/materials/";
         return;
     }
     
     if (value === 'ADD_NEW_EB') {
+        event.target.value = item[field] || "";
         window.location.href = "/inventory/edges/";
         return;
     }

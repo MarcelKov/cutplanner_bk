@@ -1,5 +1,5 @@
-<div class="overflow-x-auto bg-base-100 rounded-2xl border border-base-200 shadow-sm">
-    <table class="table table-zebra w-full">
+<div class="overflow-x-auto bg-base-100 rounded-2xl border border-base-200 shadow-sm overflow-hidden">
+    <table class="table table-zebra w-full border-separate border-spacing-0">
         <thead>
             <tr class="bg-base-200/50">
                 <th class="text-xs uppercase opacity-60">Name</th>
@@ -11,14 +11,60 @@
         </thead>
         <tbody id="material-table-body">
             {% for material in materials %}
-                {% include "inventory/partials/material/material_row.html" %}
+            {% include "inventory/partials/material/material_row.html" %}
             {% empty %}
-                <tr id="no-materials-row">
-                    <td colspan="5" class="text-center py-10 opacity-50 italic">
-                        No materials added yet.
-                    </td>
-                </tr>
+            <tr id="no-materials-row">
+                <td colspan="5" class="text-center py-10 opacity-50 italic">
+                    No materials added yet.
+                </td>
+            </tr>
             {% endfor %}
         </tbody>
     </table>
+
+    <div class="p-4 border-t-4 border-primary/10 bg-base-200/30">
+        <form hx-post="{% url 'add_material' %}" hx-target="#material-table-body" hx-swap="beforeend"
+            hx-on::after-request="if(event.detail.successful) { this.reset();
+                  if(document.getElementById('no-materials-row')) document.getElementById('no-materials-row').remove();
+              }">
+            <div class="flex gap-3 items-end">
+                <div class="flex-1">
+                    <label class="label py-0">
+                        <span class="label-text text-[10px] font-black uppercase">Material Name</span>
+                    </label>
+                    <input type="text" name="name" placeholder="..." required
+                        class="input input-sm input-bordered w-full font-bold">
+                </div>
+                <div class="w-24">
+                    <label class="label py-0">
+                        <span class="label-text text-[10px] font-black uppercase">Thick (mm)</span>
+                    </label>
+                    <input type="number" name="thickness" step="0.1" min="0.1" placeholder="18" required
+                        class="input input-sm input-bordered w-full text-center font-bold"
+                        @input="$el.value = Math.abs($el.value)">
+                </div>
+                <div class="w-36">
+                    <label class="label py-0">
+                        <span class="label-text text-[10px] font-black uppercase">Grain</span>
+                    </label>
+                    <select name="grain" class="select select-sm select-bordered w-full font-bold text-xs">
+                        {% for val, label in grain_choices %}
+                        <option value="{{ val }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="w-28">
+                    <label class="label py-0">
+                        <span class="label-text text-[10px] font-black uppercase">Price / m²</span>
+                    </label>
+                    <input type="number" name="price" step="0.01" min="0" placeholder="0.00"
+                        class="input input-sm input-bordered w-full text-center font-bold"
+                        @input="$el.value = Math.abs($el.value)">
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm px-6 font-black uppercase shadow-md">
+                    Add Material
+                </button>
+            </div>
+        </form>
+    </div>
 </div>

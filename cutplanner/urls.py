@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import (
-    HomeView, CuttingAppView, CuttingResultsView, SignUpView, ProjectListView, delete_project,
-    MaterialInventoryView, EdgeInventoryView, FurnitureInventoryView, StockInventoryView,
+    HomeView, CuttingAppView, ProjectBuilderView ,CuttingResultsView, SignUpView, ProjectListView, delete_project,
+    MaterialInventoryView, EdgeInventoryView, FurnitureInventoryView, StockInventoryView, ManualPlannerView,
     add_material, delete_material, edit_material, get_material_row,
     add_edge, edit_edge, delete_edge, get_edge_row,
     add_stock_sheet, delete_stock_sheet, edit_stock_sheet, get_stock_row,
@@ -13,8 +13,10 @@ from .views import (
 urlpatterns = [
     path('', HomeView.as_view(), name='home'),
     path('planner/', CuttingAppView.as_view(), name='cutting_app'),
+    path('project-builder/', ProjectBuilderView.as_view(), name='project_builder'),
     path('results/', CuttingResultsView.as_view(), name='cutting_results'),
     path('signup/', SignUpView.as_view(), name='signup'),
+    path('manual_planner/', ManualPlannerView.as_view(), name='manual_planner'),
     
     # Projects
     path('projects/list/', ProjectListView.as_view(), name='list_projects'),
