@@ -30,7 +30,7 @@ export const KonvaRenderer = {
     createPart(part, layout, isSelected) {
         const { scale, offsetX, offsetY } = layout;
         const pw = part.w * scale;
-        const ph =  part.h * scale;
+        const ph = part.h * scale;
 
         const hue = (part.groupId * 137.5) % 360;
         const baseFill = `hsla(${hue}, 70%, 60%, 0.4)`;
@@ -53,6 +53,35 @@ export const KonvaRenderer = {
             strokeWidth: 1.5,
             cornerRadius: 1,
         });
+
+        if (part.edges) {
+            const edgeStrokeWidth = 2;
+            const dashPattern = [4, 4];
+            const edgeColor = '#1e3a8a';
+
+            const offset = 3;
+
+            const sidePoints = {
+                top: [offset, offset, pw - offset, offset],
+                bottom: [offset, ph - offset, pw - offset, ph - offset],
+                left: [offset, offset, offset, ph - offset],
+                right: [pw - offset, offset, pw - offset, ph - offset]
+            };
+
+            Object.entries(part.edges).forEach(([side, hasEdge]) => {
+                if (hasEdge && sidePoints[side]) {
+                    const line = new Konva.Line({
+                        points: sidePoints[side],
+                        stroke: edgeColor,
+                        strokeWidth: edgeStrokeWidth,
+                        dash: dashPattern,
+                        lineCap: 'round',
+                        listening: false
+                    });
+                    group.add(line);
+                }
+            });
+        }
 
         // MAIN LABEL
         const mainLabel = new Konva.Text({
@@ -99,6 +128,42 @@ export const KonvaRenderer = {
         return group;
     },
 
+    createCutLine(cut, layout, bladeThickness) {
+        const { scale, offsetX, offsetY } = layout;
+
+        const kerf = bladeThickness || 3;
+        const kerfScaled = kerf * scale;
+
+        const isVertical = Math.abs(cut.x1 - cut.x2) < 0.1;
+
+        let x, y, width, height;
+
+        if (isVertical) {
+            x = (cut.x1 * scale) - (kerfScaled / 2);
+            y = cut.y1 * scale;
+            width = kerfScaled;
+            height = (cut.y2 - cut.y1) * scale;
+        } else {
+            x = cut.x1 * scale;
+            y = (cut.y1 * scale) - (kerfScaled / 2);
+            width = (cut.x2 - cut.x1) * scale;
+            height = kerfScaled;
+        }
+
+        return new Konva.Rect({
+            id: cut.id,
+            x: offsetX + x,
+            y: offsetY + y,
+            width: Math.max(0.5, width),
+            height: Math.max(0.5, height),
+            fill: '#450a0a',
+            opacity: 0.4,
+            stroke: '#7f1d1d',
+            strokeWidth: 0.5,
+            listening: false
+        });
+    },
+
     createGrid(width, height, layout) {
         const { scale, offsetX, offsetY } = layout;
         const gridGroup = new Konva.Group({ listening: false });
@@ -117,6 +182,7 @@ export const KonvaRenderer = {
                         x: xPos - 10,
                         y: offsetY - 15,
                         text: x.toString(),
+                        rotation: -30,
                         fontSize: Math.max(8, 9 * scale),
                         fill: '#64748b'
                     }));

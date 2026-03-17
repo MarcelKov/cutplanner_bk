@@ -2,22 +2,105 @@
     <div class="card bg-base-100 shadow-sm border border-base-300">
         <div class="card-body p-5">
             <h3 class="font-bold text-xs uppercase tracking-widest text-primary mb-4">Statistics</h3>
-            
+
             <div class="flex flex-col gap-4">
-                <div class="flex justify-between items-end">
-                    <span class="text-xs opacity-60 uppercase font-bold text-black">Utilization</span>
-                    <span class="text-2xl font-black" x-text="`${optimizationResults.stats.utilization}%` "></span>
+                <div>
+                    <div class="flex justify-between items-end mb-1">
+                        <span class="text-xs opacity-60 uppercase font-bold text-black">Utilization</span>
+                        <span class="text-2xl font-black" x-text="`${optimizationResults.stats.utilization}%` "></span>
+                    </div>
+                    <progress class="progress progress-primary w-full h-3"
+                        :value="optimizationResults.stats.utilization" max="100"></progress>
                 </div>
-                <progress class="progress progress-primary w-full h-3" 
-                          :value="optimizationResults.stats.utilization" max="100"></progress>
-                
-                <div class="grid grid-cols-2 gap-2 pt-2 border-t border-base-200">
+
+                <div class="grid grid-cols-2 gap-4 pt-4 border-t border-base-200">
                     <div class="flex flex-col">
-                        <span class="text-[10px] uppercase font-bold opacity-50">Used Sheets</span>
-                        <span class="text-lg font-bold" x-text="optimizationResults?.sheets?.length || 0"></span>
+                        <span class="text-[10px] uppercase font-bold opacity-50 text-black">Used Sheets</span>
+                        <span class="text-lg font-bold" x-text="optimizationResults.stats.sheetCount || 0"></span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-[10px] uppercase font-bold opacity-50 text-black">Cut Lenght</span>
+                        <span class="text-lg font-bold" x-text="`${optimizationResults.stats.totalCutLength} m`"></span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-[10px] uppercase font-bold opacity-50 text-black">Panel Area</span>
+                        <span class="text-lg font-bold"
+                            x-text="`${optimizationResults.stats.totalPartsArea} m²` "></span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-[10px] uppercase font-bold opacity-50 text-black">Total Project Cost</span>
+                        <span class="text-lg font-bold text-success"
+                            x-text="`${Math.round(optimizationResults.stats.totalCost + (optimizationResults.stats.totalCutLength * cuttingRate)).toLocaleString()} Kč` ">
+                        </span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <div class="card bg-base-100 shadow-sm border border-base-300"
+        x-show="Object.keys(optimizationResults.stats.materialUsage).length > 0">
+        <div class="card-body p-5">
+            <h3 class="font-bold text-[10px] uppercase tracking-widest text-black opacity-50 mb-3">Material Usage</h3>
+            <div class="space-y-2">
+                <template x-for="(data, id) in optimizationResults.stats.materialUsage" :key="id">
+                    <div class="flex justify-between items-center text-sm border-b border-base-100 pb-2 last:border-0">
+                        <div class="flex flex-col">
+                            <span class="font-bold text-black" x-text="data.label"></span>
+                            <span class="text-[10px] opacity-60" x-text="`${data.area.toFixed(2)} m²` "></span>
+                        </div>
+                        <span class="font-mono font-bold"
+                            x-text="`${Math.round(data.cost).toLocaleString()} Kč` "></span>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <div class="card bg-base-100 shadow-sm border border-base-300"
+        x-show="Object.keys(optimizationResults.stats.edgebandUsage).length > 0">
+        <div class="card-body p-5">
+            <h3 class="font-bold text-[10px] uppercase tracking-widest text-black opacity-50 mb-3">Edge Banding Usage
+            </h3>
+            <div class="space-y-2">
+                <template x-for="(data, id) in optimizationResults.stats.edgebandUsage" :key="id">
+                    <div class="flex justify-between items-center text-sm border-b border-base-100 pb-2 last:border-0">
+                        <div class="flex flex-col">
+                            <span class="font-bold text-black" x-text="data.label"></span>
+                            <span class="text-[10px] opacity-60" x-text="`${data.length.toFixed(2)} m` "></span>
+                        </div>
+                        <span class="font-mono font-bold"
+                            x-text="`${Math.round(data.cost).toLocaleString()} Kč` "></span>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
 </div>
+
+<div class="card bg-base-100 shadow-sm border border-base-300">
+    <div class="card-body p-5">
+        <h3 class="font-bold text-[10px] uppercase tracking-widest text-primary mb-3">Service Settings</h3>
+
+        <div class="flex flex-col gap-3">
+            <div class="form-control w-full">
+                <label class="label py-1">
+                    <span class="label-text text-[10px] font-bold uppercase opacity-50">Rate per 1m cut</span>
+                </label>
+                <div class="join w-full">
+                    <input type="number" x-model.number="cuttingRate"
+                        class="input input-bordered input-sm join-item w-full font-bold" placeholder="0" />
+                    <button class="btn btn-sm join-item bg-base-200 border-base-300">Kč</button>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center pt-2 border-t border-dashed border-base-200">
+                <span class="text-[10px] uppercase font-bold opacity-50 text-black">Labor Cost</span>
+                <span class="text-sm font-black text-secondary"
+                    x-text="`${Math.round(optimizationResults.stats.totalCutLength * cuttingRate).toLocaleString()} Kč` ">
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+

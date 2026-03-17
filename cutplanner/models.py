@@ -6,6 +6,7 @@ class Project(models.Model):
         ('waste', 'Minimize Waste'),
         ('cuts', 'Minimize Cuts'),
         ('stock', 'Prefer Smallest Stock Sheets First'),
+        ('lib', 'Use packing library'),
     ]
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='projects')

@@ -1,9 +1,9 @@
 from ninja import NinjaAPI
 from ninja.security import django_auth
-from .models import Project, Panel, StockSheet
+from .models import Project, Panel, StockSheet , EdgeBanding , Material
 from .schemas import SaveProjectPayload, ProjectDataSchema, ProjectBuildPayload,ProjectBuildResponse
 from django.shortcuts import get_object_or_404
-from .services import calculate_nesting
+from .services import NestingEngine
 
 api = NinjaAPI()
 
@@ -30,9 +30,45 @@ def get_project(request, project_id: int):
     return project
 
 
-@api.post("/optimize")
-def optimize_anonymous(request, data: ProjectDataSchema):
-    results = calculate_nesting(data)
+
+@api.post("/optimize", auth=[django_auth, None])
+def optimize_project(request, data: ProjectDataSchema):
+    context = {
+        "edgebands": {},
+        "materials": {}
+    }
+    
+    if request.user.is_authenticated:
+        eb_ids = {p.edge_top for p in data.panels if p.edge_top} | \
+                 {p.edge_bottom for p in data.panels if p.edge_bottom} | \
+                 {p.edge_left for p in data.panels if p.edge_left} | \
+                 {p.edge_right for p in data.panels if p.edge_right}
+        
+        mat_ids = {p.material for p in data.panels if p.material} | \
+                  {s.material for s in data.stockSheets if s.material}
+
+        context["edgebands"] = {
+            eb.id: {
+                "thickness": float(eb.thickness),
+                "price": float(eb.price_per_m or 0),
+                "name": eb.name
+            }
+            for eb in EdgeBanding.objects.filter(id__in=eb_ids, user=request.user)
+        }
+
+        context["materials"] = {
+            m.id: {
+                "thickness": float(m.thickness),
+                "grain": m.grain,
+                "price": float(m.price_per_m2 or 0),
+                "name": m.name
+            }
+            for m in Material.objects.filter(id__in=mat_ids, user=request.user)
+        }
+    
+    engine = NestingEngine(data, context)
+    results = engine.execute()
+    
     return results
 
 @api.post("/create-from-templates", auth=django_auth,response=ProjectBuildResponse)

@@ -10,11 +10,22 @@ export const resultsData = () => ({
 
     optimizationResults: Alpine.$persist({
         sheets: [],
-        unfitted: [],
+        cuts: [],
         stats: {
             utilization: 0,
+            bladeThickness: 0,
+            totalPartsArea: 0,
+            totalUsedArea: 0,
+            sheetCount: 0,
+            totalCutLength: 0,
+            cutCount: 0,
+            totalCost: 0,
+            materialUsage: {},
+            edgebandUsage: {}
         }
     }),
+
+    cuttingRate: 0.0,
 
     isOptimizing: false,
     errorMessage: '',
@@ -136,6 +147,15 @@ export const resultsData = () => ({
         this.konvaLayer.add(KonvaRenderer.createGrid(sheet.width, sheet.height, layout));
         this.konvaLayer.add(KonvaRenderer.createSheetDimensions(sheet.width, sheet.height, layout));
 
+        const relevantCuts = (this.optimizationResults.cuts || [])
+            .filter(cut => cut.sheet_uid === sheet.uid);
+
+        const bladeThickness = this.optimizationResults.stats?.bladeThickness || 3;
+
+        relevantCuts.forEach(cut => {
+            this.konvaLayer.add(KonvaRenderer.createCutLine(cut, layout, bladeThickness));
+        });
+
         sheet.parts.forEach(part => {
             const group = KonvaRenderer.createPart(part, layout, false);
             group.draggable(false);
@@ -143,5 +163,42 @@ export const resultsData = () => ({
         });
 
         this.konvaLayer.draw();
+    },
+    highlightCut(cut, isHighlighted) {
+        const node = this.konvaLayer.findOne('#' + cut.id);
+        if (!node) return;
+
+        const originalThickness = this.optimizationResults.stats.bladeThickness || 3;
+        const scale = this.currentLayout?.scale || 1;
+
+        if (isHighlighted) {
+            const isVertical = cut.x1 === cut.x2;
+
+            node.setAttrs({
+                fill: '#c084fc', 
+                opacity: 1,
+                stroke: '#000',  
+                strokeWidth: 1 / scale, 
+                width: isVertical ? (originalThickness + 4) * scale : node.width(),
+                height: !isVertical ? (originalThickness + 4) * scale : node.height(),
+                offsetX: isVertical ? 2 * scale : 0,
+                offsetY: !isVertical ? 2 * scale : 0
+            });
+
+            node.moveToTop();
+        } else {
+            const isVertical = cut.x1 === cut.x2;
+            node.setAttrs({
+                fill: '#450a0a',
+                opacity: 0.4,
+                strokeWidth: 0,
+                width: isVertical ? originalThickness * scale : node.width(),
+                height: !isVertical ? originalThickness * scale : node.height(),
+                offsetX: 0,
+                offsetY: 0
+            });
+        }
+
+        this.konvaLayer.batchDraw();
     },
 });

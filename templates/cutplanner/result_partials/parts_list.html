@@ -36,3 +36,60 @@
         </template>
     </div>
 </div>
+
+<div class="card bg-base-100 shadow-sm border border-base-300" x-show="optimizationResults.cuts.length > 0">
+    <div class="collapse collapse-arrow">
+        <input type="checkbox" />
+        <div class="collapse-title p-5">
+            <h3 class="font-bold text-xs uppercase tracking-widest text-primary">All Cuts List</h3>
+            <p class="text-[10px] opacity-50 uppercase font-bold text-black mt-1"
+                x-text="`${optimizationResults.cuts.filter(c => c.sheet_uid === optimizationResults.sheets[currentSheetIndex].uid).length} cuts on this sheet`">
+            </p>
+        </div>
+        <div class="collapse-content px-5 pb-5">
+            <div class="overflow-y-auto max-h-80 border border-base-200 rounded-lg">
+                <table class="table table-xs w-full table-pin-rows">
+                    <thead>
+                        <tr class="opacity-50 text-black bg-base-100">
+                            <th>#</th>
+                            <th>Type</th>
+                            <th>Lenght</th>
+                            <th>Position</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template
+                            x-for="(cut, index) in optimizationResults.cuts.filter(c => c.sheet_uid === optimizationResults.sheets[currentSheetIndex].uid)"
+                            :key="cut.id">
+                            <tr class="hover:bg-primary hover:text-primary-content cursor-help transition-colors border-base-100"
+                                @mouseenter="highlightCut(cut, true)" @mouseleave="highlightCut(cut, false)">
+
+                                <td class="font-mono opacity-50 text-[10px]" x-text="index + 1"></td>
+
+                                <td>
+                                    <span class="badge badge-outline badge-xs uppercase font-bold text-[9px]"
+                                        :class="cut.x1 === cut.x2 ? 'badge-info' : 'badge-warning'"
+                                        x-text="cut.x1 === cut.x2 ? 'Vertical' : 'Horizontal'">
+                                    </span>
+                                </td>
+
+                                <td class="font-bold text-xs">
+                                    <span
+                                        x-text="`${(Math.sqrt(Math.pow(cut.x2 - cut.x1, 2) + Math.pow(cut.y2 - cut.y1, 2)) / 1000).toFixed(2)}m` "></span>
+                                </td>
+
+                                <td class="font-mono text-[10px] opacity-70">
+                                    <div class="flex items-center gap-1">
+                                        <span x-text="`${Math.round(cut.x1)},${Math.round(cut.y1)}` "></span>
+                                        <span class="opacity-40">→</span>
+                                        <span x-text="`${Math.round(cut.x2)},${Math.round(cut.y2)}` "></span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
