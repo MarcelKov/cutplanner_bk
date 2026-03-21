@@ -24,17 +24,18 @@ class CustomPacker:
 
         # Serazeni desek, pro stock chceme malé desky.
         small_bins_first = self.priority != 'stock'
-        self.bins.sort(key=lambda b: b['w'] * b['h'], reverse=small_bins_first)
+        curr_bins = sorted(self.bins,key=lambda b: b['w'] * b['h'], reverse=small_bins_first)
 
         # vychozi solution
-        curr_order = sorted(self.rects, key=lambda x: x['w'] * x['h'], reverse=True)
-        curr_rots = [False] * len(curr_order)
+        curr_panel_order = sorted(self.rects, key=lambda x: x['w'] * x['h'], reverse=True)
+        curr_panel_rots = [False] * len(curr_panel_order)
         
-        curr_res = self._execute_packing(curr_order, curr_rots)
+        curr_res = self._execute_packing(curr_panel_order, curr_panel_rots, curr_bins)
         curr_score = self._calculate_fitness(curr_res)
         
-        best_order = list(curr_order)
-        best_rots = list(curr_rots)
+        best_panel_order = list(curr_panel_order)
+        best_panel_rots = list(curr_panel_rots)
+        best_bins = list(curr_bins)
         best_score = curr_score
 
         # SA
@@ -46,36 +47,40 @@ class CustomPacker:
         for _ in range(50): 
             for _ in range(25):
                 # Neighborhood Search
-                new_order = list(curr_order)
-                new_rots = list(curr_rots)
+                new_panel_order = list(curr_panel_order)
+                new_panel_rots = list(curr_panel_rots)
+                new_bins = list(curr_bins)
                 
-                if random.random() < 0.6: # 60% sance na prohozeni
-                    i, j = random.sample(range(len(new_order)), 2)
-                    #prohozeni 2 dilku a jejich pozic v tabulce rotaci
-                    new_order[i], new_order[j] = new_order[j], new_order[i]
-                    new_rots[i], new_rots[j] = new_rots[j], new_rots[i]
-                elif self.rotation_allowed: # 40% na zmenu rotace
-                    i = random.randrange(len(new_rots))
-                    new_rots[i] = not new_rots[i]
+                rand_val = random.random()
+                if rand_val < 0.5: # 50% sance na prohozeni
+                    i, j = random.sample(range(len(new_panel_order)), 2)
+                    new_panel_order[i], new_panel_order[j] = new_panel_order[j], new_panel_order[i]
+                    new_panel_rots[i], new_panel_rots[j] = new_panel_rots[j], new_panel_rots[i]
+                elif rand_val < 0.7 and self.rotation_allowed:# 40% na zmenu rotace
+                    i = random.randrange(len(new_panel_rots))
+                    new_panel_rots[i] = not new_panel_rots[i]
+                else:
+                    if len(new_bins) > 1:
+                        i, j = random.sample(range(len(new_bins)), 2)
+                        new_bins[i], new_bins[j] = new_bins[j], new_bins[i]
 
                 # Objective Function Evaluation
-                new_res = self._execute_packing(new_order, new_rots)
+                new_res = self._execute_packing(new_panel_order, new_panel_rots, new_bins)
                 new_score = self._calculate_fitness(new_res)
 
                 # Acceptance Probability
                 if new_score < curr_score or random.random() < math.exp(max(-700, (curr_score - new_score) / (temp + 1e-9))):
-                    curr_order, curr_rots, curr_score = new_order, new_rots, new_score
+                    curr_panel_order, curr_panel_rots, curr_bins, curr_score = new_panel_order, new_panel_rots, new_bins, new_score
                     if curr_score < best_score:
-                        best_order, best_rots, best_score = new_order, new_rots, new_score
+                        best_panel_order, best_panel_rots, best_bins, best_score = list(new_panel_order), list(new_panel_rots), list(new_bins), new_score
             #Cooling Schedule
             temp *= cooling
 
         # solution
-        self.result = self._execute_packing(best_order, best_rots)
+        self.result = self._execute_packing(best_panel_order, best_panel_rots, best_bins)
         return self.result
 
-
-    def _execute_packing(self, panel_order, rotation_plan):
+    def _execute_packing(self, panel_order, rotation_plan, sheet_order):
         # gilotinovy pacekr Best Area Fit + MAXAS
         optimized_results = []
         panels_to_place = []
@@ -86,7 +91,7 @@ class CustomPacker:
             panels_to_place.append(panel_data)
 
         # prochazime desky
-        for sheet_data in self.bins:
+        for sheet_data in sheet_order:
             if not panels_to_place:
                 break
                 
@@ -203,15 +208,21 @@ class CustomPacker:
         if not packed_sheets:
             return float('inf')
 
-        total_sheets_area = 0    
+        weighted_area_score = 0 
         total_parts_compactness = 0 
         total_alignment_penalty = 0 
 
         for sheet in packed_sheets:
             # WASTE: pridame plochy desky 
-            total_sheets_area += (sheet.w * sheet.h)
+            area_m2 = (sheet.w * sheet.h) / 1_000_000
 
-            # ALIGNMENT: unikatni linee rezu 
+            if self.priority == 'stock':
+                # Penalizace velke desky
+                weighted_area_score += (area_m2 ** 1.3) * 1000
+            else:
+                weighted_area_score += area_m2 * 1000
+
+            # ALIGNMENT: unikatni linie rezu 
             unique_vertical_cuts = {rect.x + rect.width for rect in sheet}
             unique_horizontal_cuts = {rect.y + rect.height for rect in sheet}
             total_alignment_penalty += (len(unique_vertical_cuts) + len(unique_horizontal_cuts))
@@ -221,7 +232,6 @@ class CustomPacker:
                 total_parts_compactness += (rect.x + rect.y)
 
 
-        area_m2 = total_sheets_area / 1_000_000
 
         if self.priority == 'cuts':
             # Priorita Minimal Cuts: prevazne ALIGNMENT
@@ -229,4 +239,4 @@ class CustomPacker:
 
         # Priorita Minimaze Waste:
         # prevazne plocha
-        return (area_m2 * 1000) + (total_parts_compactness * 0.1) + (total_alignment_penalty * 0.1)
+        return weighted_area_score + (total_parts_compactness * 0.1) + (total_alignment_penalty * 0.1)

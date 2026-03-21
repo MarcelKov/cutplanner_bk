@@ -1,4 +1,45 @@
 export const KonvaRenderer = {
+    attachInteractivity(stage) {
+        if (!stage) return;
+
+        stage.draggable(true);
+
+        stage.on('dragstart', () => {
+            stage.container().style.cursor = 'grabbing';
+        });
+        stage.on('dragend', () => {
+            stage.container().style.cursor = 'grab';
+        });
+        stage.container().style.cursor = 'grab';
+
+        stage.on('wheel', (e) => {
+            e.evt.preventDefault();
+
+            const scaleBy = 1.1;
+            const oldScale = stage.scaleX();
+            const pointer = stage.getPointerPosition();
+
+            const mousePointTo = {
+                x: (pointer.x - stage.x()) / oldScale,
+                y: (pointer.y - stage.y()) / oldScale,
+            };
+
+            const newScale = e.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
+
+            // Limity zoomu
+            if (newScale < 0.05 || newScale > 10) return;
+
+            stage.scale({ x: newScale, y: newScale });
+
+            const newPos = {
+                x: pointer.x - mousePointTo.x * newScale,
+                y: pointer.y - mousePointTo.y * newScale,
+            };
+            stage.position(newPos);
+            stage.batchDraw();
+        });
+    },
+
     calculateLayout(container, sheetWidth, sheetHeight, padding = 40) {
         const availableW = container.offsetWidth - (padding * 2);
         const availableH = container.offsetHeight - (padding * 2);

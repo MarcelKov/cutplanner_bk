@@ -107,6 +107,7 @@ export const resultsData = () => ({
 
         this.konvaLayer = new Konva.Layer();
         this.konvaStage.add(this.konvaLayer);
+        KonvaRenderer.attachInteractivity(this.konvaStage);
 
         this.drawCanvas();
     },

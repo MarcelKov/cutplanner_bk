@@ -104,6 +104,7 @@ export const manualPlannerData = () => ({
 
         this.manualLayer = new Konva.Layer();
         this.manualStage.add(this.manualLayer);
+        KonvaRenderer.attachInteractivity(this.manualStage);
         this.renderManualCanvas();
     },
 
