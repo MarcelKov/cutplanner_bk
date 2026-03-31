@@ -52,11 +52,11 @@ class CustomPacker:
                 new_bins = list(curr_bins)
                 
                 rand_val = random.random()
-                if rand_val < 0.5: # 50% sance na prohozeni
+                if rand_val < 0.5 and len(new_panel_order) >= 2: # 50% sance na prohozeni
                     i, j = random.sample(range(len(new_panel_order)), 2)
                     new_panel_order[i], new_panel_order[j] = new_panel_order[j], new_panel_order[i]
                     new_panel_rots[i], new_panel_rots[j] = new_panel_rots[j], new_panel_rots[i]
-                elif rand_val < 0.7 and self.rotation_allowed:# 40% na zmenu rotace
+                elif rand_val < 0.7 and self.rotation_allowed and len(new_panel_rots) > 0:# 40% na zmenu rotace
                     i = random.randrange(len(new_panel_rots))
                     new_panel_rots[i] = not new_panel_rots[i]
                 else:
