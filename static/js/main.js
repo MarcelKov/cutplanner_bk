@@ -3,6 +3,7 @@ import { resultsData } from './modules/resultsData.js';
 import { manualPlannerData } from './modules/manualPlannerData.js';
 import { projectManager } from './modules/projectManager.js';
 import { projectBuilder } from './modules/projectBuilder.js';
+import { furnitureManager } from './modules/furnitureManager.js';
 
 document.addEventListener('alpine:init', () => {
     Alpine.data('projectManager', projectManager);
@@ -10,4 +11,5 @@ document.addEventListener('alpine:init', () => {
     Alpine.data('resultsData', resultsData);
     Alpine.data('manualPlannerData', manualPlannerData);
     Alpine.data('projectBuilder', projectBuilder);
+    Alpine.data('furnitureManager', furnitureManager);
 });

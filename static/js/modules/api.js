@@ -52,5 +52,33 @@ async function loadFromTemplates(payload) {
     return response.json(); 
 }
 
+async function pasteFurniture(sourceId, targetId) {
+    const response = await fetch('/api/furniture/paste', {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({
+            source_id: sourceId,
+            target_id: targetId
+        })
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Paste failed');
+    }
+    return response.json();
+}
 
-export { save, load, optimize ,loadFromTemplates};
+async function createFurniture(payload) {
+    const response = await fetch('/api/furniture/create', {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(payload)
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Creation failed');
+    }
+    return response.json();
+}
+
+export { save, load, optimize ,loadFromTemplates, pasteFurniture, createFurniture};

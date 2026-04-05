@@ -5,7 +5,7 @@ from .views import (
     add_material, delete_material, edit_material, get_material_row,
     add_edge, edit_edge, delete_edge, get_edge_row,
     add_stock_sheet, delete_stock_sheet, edit_stock_sheet, get_stock_row,
-    add_furniture, get_furniture_detail, delete_furniture, add_panel, delete_panel,
+     get_furniture_detail, delete_furniture, add_panel, delete_panel,
     get_furniture_header,get_furniture_list,edit_furniture_name,
     get_panel_edge_detail,edit_panel,get_panel_row
 )
@@ -48,7 +48,6 @@ urlpatterns = [
     path('inventory/stock/row/<int:pk>/', get_stock_row, name='get_stock_row'),
     
     # Furniture & Panel Actions
-    path('inventory/furniture/add/', add_furniture, name='add_furniture'),
     path('inventory/furniture/<int:pk>/', get_furniture_detail, name='get_furniture_detail'),
     path('inventory/furniture/delete/<int:pk>/', delete_furniture, name='delete_furniture'),
     path('inventory/furniture/<int:furn_id>/panel/add/', add_panel, name='add_panel'),

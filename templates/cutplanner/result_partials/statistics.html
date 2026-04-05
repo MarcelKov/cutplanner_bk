@@ -28,9 +28,15 @@
                             x-text="`${optimizationResults.stats.totalPartsArea} m²` "></span>
                     </div>
                     <div class="flex flex-col">
-                        <span class="text-[10px] uppercase font-bold opacity-50 text-black">Total Project Cost</span>
-                        <span class="text-lg font-bold text-success"
-                            x-text="`${Math.round(optimizationResults.stats.totalCost + (optimizationResults.stats.totalCutLength * cuttingRate)).toLocaleString()} Kč` ">
+                        <span class="text-[10px] uppercase font-bold opacity-50 text-black">
+                            Total Project Cost
+                        </span>
+
+                        <span class="text-lg font-bold text-success font-mono" x-text="`${Math.round(
+                            (costMode === 'sheets' ? optimizationResults.stats.totalMaterialSheetCost : optimizationResults.stats.totalMaterialPartCost) 
+                            + optimizationResults.stats.totalEdgebandCost 
+                            + (optimizationResults.stats.totalCutLength * cuttingRate)
+                            ).toLocaleString()} Kč` ">
                         </span>
                     </div>
                 </div>
@@ -38,24 +44,55 @@
         </div>
     </div>
 
+
+    <div class="tabs tabs-boxed bg-base-200 p-0.5 mb-4 w-fit mx-auto h-7 flex items-center">
+        <button class="tab h-6 min-h-6 text-[9px] font-bold uppercase transition-all px-2"
+            :class="costMode === 'sheets' ? 'tab-active bg-primary text-white' : 'opacity-40'"
+            @click="costMode = 'sheets'">
+            Sheets
+        </button>
+        <button class="tab h-6 min-h-6 text-[9px] font-bold uppercase transition-all px-2"
+            :class="costMode === 'parts' ? 'tab-active bg-primary text-white' : 'opacity-40'"
+            @click="costMode = 'parts'">
+            Parts
+        </button>
+    </div>
+
     <div class="card bg-base-100 shadow-sm border border-base-300"
         x-show="Object.keys(optimizationResults.stats.materialUsage).length > 0">
         <div class="card-body p-5">
-            <h3 class="font-bold text-[10px] uppercase tracking-widest text-black opacity-50 mb-3">Material Usage</h3>
+            <h3 class="font-bold text-[10px] uppercase tracking-widest text-black opacity-50 mb-3">
+                Material Usage (<span x-text="costMode === 'sheets' ? 'Gross' : 'Net'"></span>)
+            </h3>
+
             <div class="space-y-2">
-                <template x-for="(data, id) in optimizationResults.stats.materialUsage" :key="id">
+                <template
+                    x-for="(data, id) in (costMode === 'sheets' ? optimizationResults.stats.materialUsage : optimizationResults.stats.materialUsageParts)"
+                    :key="id">
                     <div class="flex justify-between items-center text-sm border-b border-base-100 pb-2 last:border-0">
                         <div class="flex flex-col">
                             <span class="font-bold text-black" x-text="data.label"></span>
-                            <span class="text-[10px] opacity-60" x-text="`${data.area.toFixed(2)} m²` "></span>
+                            <div class="flex gap-2 items-center">
+                                <span class="text-[10px] opacity-60" x-text="`${data.area.toFixed(2)} m²` "></span>
+                                <span class="badge badge-ghost badge-xs text-[8px] opacity-40 uppercase"
+                                    x-text="costMode === 'sheets' ? 'Stock' : 'Net'"></span>
+                            </div>
                         </div>
                         <span class="font-mono font-bold"
                             x-text="`${Math.round(data.cost).toLocaleString()} Kč` "></span>
                     </div>
                 </template>
             </div>
+
+            <div class="mt-4 pt-3 border-t border-base-200 flex justify-between items-center">
+                <span class="text-[10px] font-bold uppercase opacity-50 text-black">Total Material Cost</span>
+                <span class="font-bold text-black"
+                    x-text="`${Math.round(costMode === 'sheets' ? optimizationResults.stats.totalMaterialSheetCost : optimizationResults.stats.totalMaterialPartCost).toLocaleString()} Kč` ">
+                </span>
+            </div>
         </div>
     </div>
+
 
     <div class="card bg-base-100 shadow-sm border border-base-300"
         x-show="Object.keys(optimizationResults.stats.edgebandUsage).length > 0">
@@ -103,4 +140,3 @@
         </div>
     </div>
 </div>
-

@@ -17,12 +17,18 @@ export const manualPlannerData = () => ({
     settings: {
         snapToParts: true,
         snapGrid: 5,
+        bladeThickness: 0
     },
     errorMessage: '',
     isExporting: false,
 
     initManualEditor() {
         this.$nextTick(() => {
+            const globalSettings = JSON.parse(localStorage.getItem('_x_settings'));
+            if (globalSettings && globalSettings.bladeThickness) {
+                this.settings.bladeThickness = parseFloat(globalSettings.bladeThickness);
+            }
+
             // Create a fresh list of sheets based on the current stockSheets in the editor
             const currentSheets = this.stockSheets
                 .filter(s => (parseFloat(s.length) || 0) > 0 && (parseFloat(s.width) || 0) > 0)
@@ -38,6 +44,7 @@ export const manualPlannerData = () => ({
                             label: s.label ? `${s.label} (${i + 1}/${qty})` : `Sheet ${sIdx + 1}.${i + 1}`,
                             width: parseFloat(s.length),
                             height: parseFloat(s.width),
+                            material: s.material,
                             qty: qty
                         });
                     }
@@ -63,7 +70,9 @@ export const manualPlannerData = () => ({
                             groupId: pIdx,
                             label: p.label || `P${pIdx + 1}`,
                             w: parseFloat(p.length),
-                            h: parseFloat(p.width)
+                            h: parseFloat(p.width),
+                            material: p.material,
+                            isVirtual: false
                         });
                     }
                 });
@@ -112,6 +121,15 @@ export const manualPlannerData = () => ({
 
     addPartToStage(part) {
         let sheet = this.manualLayout.sheets[this.currentSheetIndex];
+
+        const partMat = part.material ? String(part.material) : null;
+        const sheetMat = sheet.material ? String(sheet.material) : null;
+
+        if (partMat !== sheetMat) {
+            this.errorMessage = `Material mismatch! Part "${part.label}" requires different material than this sheet.`;
+            setTimeout(() => { this.errorMessage = ''; }, 3000);
+            return;
+        }
 
         const fitsNormal = part.w <= sheet.width && part.h <= sheet.height;
         const fitsRotated = part.h <= sheet.width && part.w <= sheet.height;
@@ -201,6 +219,8 @@ export const manualPlannerData = () => ({
             let newX = rawX;
             let newY = rawY;
 
+            const kerf = parseFloat(this.settings.bladeThickness) || 0;
+
             if (this.settings.snapToParts) {
                 const threshold = 20;
                 let bestX = newX;
@@ -211,7 +231,12 @@ export const manualPlannerData = () => ({
                 sheet.parts.forEach(other => {
                     if (other.uid === part.uid) return;
 
-                    const xTargets = [other.x, other.x + other.w, other.x - part.w];
+                    const xTargets = [
+                        other.x,
+                        other.x + other.w + kerf,
+                        other.x - part.w - kerf
+                    ];
+
                     xTargets.forEach(target => {
                         const dist = Math.abs(rawX - target);
                         if (dist < minDistX) {
@@ -220,7 +245,12 @@ export const manualPlannerData = () => ({
                         }
                     });
 
-                    const yTargets = [other.y, other.y + other.h, other.y - part.h];
+                    const yTargets = [
+                        other.y,
+                        other.y + other.h + kerf,
+                        other.y - part.h - kerf
+                    ];
+                    
                     yTargets.forEach(target => {
                         const dist = Math.abs(rawY - target);
                         if (dist < minDistY) {
@@ -265,16 +295,17 @@ export const manualPlannerData = () => ({
 
     checkCollisions(movingPart, allParts, group) {
         let isOverlapping = false;
+        const kerf = parseFloat(this.settings.bladeThickness) || 0;
         const rect = group.findOne('Rect');
 
         for (let other of allParts) {
             if (other.uid === movingPart.uid) continue;
 
             if (
-                movingPart.x < other.x + other.w &&
-                movingPart.x + movingPart.w > other.x &&
-                movingPart.y < other.y + other.h &&
-                movingPart.y + movingPart.h > other.y
+                movingPart.x < other.x + other.w + kerf &&
+                movingPart.x + movingPart.w + kerf > other.x &&
+                movingPart.y < other.y + other.h + kerf &&
+                movingPart.y + movingPart.h + kerf > other.y
             ) {
                 isOverlapping = true;
                 break;
@@ -351,7 +382,9 @@ export const manualPlannerData = () => ({
             label: part.label,
             w: part.w,
             h: part.h,
-            hue: part.hue,
+            material: part.material,
+            groupId: part.groupId,
+            isVirtual: part.isVirtual,
             rotated: false,
             x: 0,
             y: 0
@@ -388,6 +421,35 @@ export const manualPlannerData = () => ({
 
         sheet.parts = [];
         this.selectedPartUid = null;
+        this.renderManualCanvas();
+    },
+    duplicateSelectedPart() {
+        if (!this.selectedPartUid) return;
+
+        const sheet = this.manualLayout.sheets[this.currentSheetIndex];
+        const sourcePart = sheet.parts.find(p => p.uid === this.selectedPartUid);
+
+        if (!sourcePart) return;
+
+        const newLabel = sourcePart.isVirtual
+            ? sourcePart.label
+            : `Virtual_${sourcePart.label}`;
+
+        const virtualUid = `virtual-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+        const newPart = {
+            ...sourcePart,
+            uid: virtualUid,
+            isVirtual: true,
+            label: newLabel,
+        };
+
+        sheet.parts.push(newPart);
+
+        this.selectedPartUid = virtualUid;
+        this.selectedPartX = newPart.x;
+        this.selectedPartY = newPart.y;
+
         this.renderManualCanvas();
     },
 });

@@ -270,6 +270,7 @@ class NestingEngine:
         total_cut_length = 0
         
         material_usage = {} 
+        material_usage_parts = {}
         edgeband_usage = {} 
 
         for s in used_sheets:
@@ -293,8 +294,22 @@ class NestingEngine:
             for p in s["parts"]:
                 part_w = p["w"]
                 part_h = p["h"]
-                total_parts_area += part_w * part_h
-                
+                part_area = part_w * part_h
+                total_parts_area += part_area
+                p_mat_id = p.get("material_id") or mat_id
+                if p_mat_id:
+                    p_mat_data = self.context["materials"].get(p_mat_id, {})
+                    if p_mat_id not in material_usage_parts:
+                        material_usage_parts[p_mat_id] = {
+                            "label": p_mat_data.get("name", p_mat_id),
+                            "area": 0,
+                            "cost": 0
+                        }
+                    p_area_m2 = part_area / 1_000_000
+                    material_usage_parts[p_mat_id]["area"] += p_area_m2
+                    material_usage_parts[p_mat_id]["cost"] += p_area_m2 * float(p_mat_data.get("price", 0))
+
+
                 for side, eb_id in p.get("edges", {}).items():
                     if eb_id:
                         eb_data = self.context["edgebands"].get(eb_id, {})
@@ -317,8 +332,9 @@ class NestingEngine:
             total_cut_length += length / 1000
 
         utilization = (total_parts_area / total_used_area * 100) if total_used_area > 0 else 0
-        total_mat_cost = sum(m["cost"] for m in material_usage.values())
-        total_eb_cost = sum(e["cost"] for e in edgeband_usage.values())
+        total_material_sheet_cost = sum(m["cost"] for m in material_usage.values())
+        total_material_part_cost = sum(m["cost"] for m in material_usage_parts.values())
+        total_edgeband_cost = sum(e["cost"] for e in edgeband_usage.values())
 
         return {
             "utilization": round(utilization, 1),
@@ -329,6 +345,9 @@ class NestingEngine:
             "totalCutLength": round(total_cut_length, 2),
             "cutCount": len(all_cuts),
             "materialUsage": material_usage,
+            "materialUsageParts": material_usage_parts,
             "edgebandUsage": edgeband_usage,
-            "totalCost": round(total_mat_cost + total_eb_cost, 2)
+            "totalMaterialSheetCost": round(total_material_sheet_cost, 2),
+            "totalMaterialPartCost": round(total_material_part_cost, 2),
+            "totalEdgebandCost": round(total_edgeband_cost, 2),
         }

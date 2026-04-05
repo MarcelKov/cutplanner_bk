@@ -97,6 +97,7 @@ class FurnitureInventoryView(BaseInventoryView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['furniture'] = Furniture.objects.filter(user=self.request.user)
+        context['materials'] = Material.objects.filter(user=self.request.user)
         context['active_tab'] = 'furniture'
         return context
 
@@ -296,21 +297,59 @@ def get_stock_row(request, pk):
     return render(request, "inventory/partials/stock/stock_row.html", {'sheet': sheet})
 
 
-@login_required
-@require_http_methods(["POST"])
-def add_furniture(request):
-    name = request.POST.get('name', '').strip()
-    if not name:
-        return HttpResponse("Name is required", status=400)
-    
-    furn = Furniture.objects.create(user=request.user, name=name)
-    return render(request, "inventory/partials/furniture/furniture_list_item.html", {'furn': furn})
 
 @login_required
 def get_furniture_detail(request, pk):
     furniture = get_object_or_404(Furniture, pk=pk, user=request.user)
     context = {
         'furniture': furniture,
+        'materials': Material.objects.filter(user=request.user),
+        'edges': EdgeBanding.objects.filter(user=request.user),
+    }
+    return render(request, "inventory/partials/furniture/furniture_detail.html", context)
+
+@login_required
+@require_http_methods(["POST"])
+def paste_furniture_parts(request):
+    source_id = request.POST.get('source_id')
+    target_id = request.POST.get('target_id')
+    print(f"s:{source_id} t: {target_id}")
+
+    if not source_id or not target_id:
+        return HttpResponse("Missing IDs", status=400)
+    try:
+        source_id = int(source_id)
+        target_id = int(target_id)
+    except ValueError:
+        return HttpResponse("ID must be valid number.", status=400)
+    
+    source_furn = get_object_or_404(Furniture, id=source_id, user=request.user)
+    target_furn = get_object_or_404(Furniture, id=target_id, user=request.user)
+    
+    source_parts = source_furn.parts.all()
+    
+    for s_part in source_parts:
+        existing_part = target_furn.parts.filter(
+            length=s_part.length,
+            width=s_part.width,
+            material=s_part.material,
+            edge_top=s_part.edge_top,
+            edge_bottom=s_part.edge_bottom,
+            edge_left=s_part.edge_left,
+            edge_right=s_part.edge_right,
+            label=s_part.label
+        ).first()
+        
+        if existing_part:
+            existing_part.quantity += s_part.quantity
+            existing_part.save()
+        else:
+            s_part.pk = None
+            s_part.cabinet = target_furn
+            s_part.save()
+            
+    context = {
+        'furniture': target_furn,
         'materials': Material.objects.filter(user=request.user),
         'edges': EdgeBanding.objects.filter(user=request.user),
     }

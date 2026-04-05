@@ -1,21 +1,75 @@
 <dialog id="furniture_add_modal" class="modal">
-    <div class="modal-box">
-        <h3 class="font-bold text-lg mb-4 uppercase">Create Furniture Template</h3>
-        <form hx-post="{% url 'add_furniture' %}" 
-              hx-target="#furniture-list" 
-              hx-swap="afterbegin"
-              hx-on::after-request="if(event.detail.successful) { this.reset(); furniture_add_modal.close(); }">
+    <div class="modal-box max-w-lg">
+        <h3 class="font-bold text-lg mb-4 uppercase">Create Furniture</h3>
+
+        <div class="tabs tabs-boxed mb-6 bg-base-200">
+            <a class="tab flex-1" :class="tab === 'simple' ? 'tab-active text-primary' : ''"
+                @click="tab = 'simple'">Blank Template</a>
+            <a class="tab flex-1" :class="tab === 'generator' ? 'tab-active text-primary' : ''"
+                @click="tab = 'generator'">Generate Template</a>
+        </div>
+
+        <div class="space-y-4">
             <div class="form-control w-full">
-                <label class="label"><span class="label-text font-bold uppercase text-xs">Template Name</span></label>
-                <input type="text" name="name" placeholder="..." required
-                       class="input input-bordered w-full font-bold">
+                <label class="label"><span class="label-text font-bold uppercase text-xs">Furniture Name</span></label>
+                <input type="text" x-model="name" placeholder="..." required
+                    class="input input-bordered w-full font-bold">
             </div>
 
-            <div class="modal-action">
-                <button type="button" class="btn btn-ghost" @click="furniture_add_modal.close()">Cancel</button>
-                <button type="submit" class="btn btn-primary font-black uppercase">Create</button>
+            <div x-show="tab === 'generator'" x-transition class="space-y-4 border-t border-base-300 pt-4">
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="form-control">
+                        <label class="label text-[10px] uppercase font-bold">Height</label>
+                        <input type="number" x-model="height" class="input input-bordered input-sm font-bold">
+                    </div>
+                    <div class="form-control">
+                        <label class="label text-[10px] uppercase font-bold">Width</label>
+                        <input type="number" x-model="width" class="input input-bordered input-sm font-bold">
+                    </div>
+                    <div class="form-control">
+                        <label class="label text-[10px] uppercase font-bold">Depth</label>
+                        <input type="number" x-model="depth" class="input input-bordered input-sm font-bold">
+                    </div>
+                </div>
+
+                <div class="flex gap-4">
+                    <div class="flex-1">
+                        <label class="label py-0">
+                            <span class="label-text text-[10px] font-black uppercase">Material</span>
+                        </label>
+                        <select x-model="materialId" class="select select-sm select-bordered w-full font-bold">
+                            <option value="">---</option>
+                            {% for m in materials %}
+                            <option value="{{ m.id }}">{{ m.name }} ({{ m.thickness }}mm)</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="w-24">
+                        <label class="label py-0">
+                            <span class="label-text text-[10px] font-black uppercase">Shelves</span>
+                        </label>
+                        <input type="number" x-model="shelves"
+                            class="input input-bordered input-sm font-bold w-full text-center">
+                    </div>
+                </div>
+
+                <div class="form-control">
+                    <label class="label cursor-pointer justify-start gap-4 h-full">
+                        <input type="checkbox" x-model="openFront" class="checkbox checkbox-primary checkbox-sm">
+                        <span class="label-text text-xs uppercase font-bold">No Door (Open)</span>
+                    </label>
+                </div>
             </div>
-        </form>
+        </div>
+        <div class="modal-action">
+            <button type="button" class="btn btn-ghost" @click="document.getElementById('furniture_add_modal').close()">
+                Cancel
+            </button>
+
+            <button type="button" class="btn btn-primary font-black uppercase px-8" @click="submitCreate()">
+                Create
+            </button>
+        </div>
     </div>
     <form method="dialog" class="modal-backdrop">
         <button>close</button>

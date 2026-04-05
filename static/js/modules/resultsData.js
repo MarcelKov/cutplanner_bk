@@ -19,8 +19,11 @@ export const resultsData = () => ({
             sheetCount: 0,
             totalCutLength: 0,
             cutCount: 0,
-            totalCost: 0,
+            totalMaterialSheetCost: 0,
+            totalMaterialPartCost: 0,
+            totalEdgebandCost: 0,
             materialUsage: {},
+            materialUsageParts: {},
             edgebandUsage: {}
         }
     }),
@@ -32,6 +35,7 @@ export const resultsData = () => ({
     currentSheetIndex: 0,
     konvaStage: null,
     isExporting: false,
+    costMode: 'sheets',
 
     init() {
         if (this.optimizationResults?.sheets?.length > 0) {
@@ -176,10 +180,10 @@ export const resultsData = () => ({
             const isVertical = cut.x1 === cut.x2;
 
             node.setAttrs({
-                fill: '#c084fc', 
+                fill: '#c084fc',
                 opacity: 1,
-                stroke: '#000',  
-                strokeWidth: 1 / scale, 
+                stroke: '#000',
+                strokeWidth: 1 / scale,
                 width: isVertical ? (originalThickness + 4) * scale : node.width(),
                 height: !isVertical ? (originalThickness + 4) * scale : node.height(),
                 offsetX: isVertical ? 2 * scale : 0,

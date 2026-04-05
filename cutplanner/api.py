@@ -1,7 +1,8 @@
 from ninja import NinjaAPI
 from ninja.security import django_auth
-from .models import Project, Panel, StockSheet , EdgeBanding , Material
-from .schemas import SaveProjectPayload, ProjectDataSchema, ProjectBuildPayload,ProjectBuildResponse
+from .models import Project, Panel, StockSheet , EdgeBanding , Material, Furniture
+from django.db import transaction
+from .schemas import SaveProjectPayload, ProjectDataSchema, ProjectBuildPayload,ProjectBuildResponse, PasteSchema, FurnitureCreateSchema
 from django.shortcuts import get_object_or_404
 from .services import NestingEngine
 
@@ -28,7 +29,6 @@ def save_project(request, payload: SaveProjectPayload):
 def get_project(request, project_id: int):
     project = get_object_or_404(Project, id=project_id, user=request.user)
     return project
-
 
 
 @api.post("/optimize", auth=[django_auth, None])
@@ -111,3 +111,75 @@ def create_from_templates(request, payload: ProjectBuildPayload):
         "panels": all_panels,
         "stockSheets": all_sheets
     }
+
+@api.post("/furniture/paste", auth=django_auth)
+def paste_furniture(request, data: PasteSchema):
+    source_furn = get_object_or_404(Furniture, id=data.source_id, user=request.user)
+    target_furn = get_object_or_404(Furniture, id=data.target_id, user=request.user)
+    
+    with transaction.atomic():
+        for s_part in source_furn.parts.all():
+            existing_part = target_furn.parts.filter(
+                length=s_part.length,
+                width=s_part.width,
+                material=s_part.material,
+                edge_top=s_part.edge_top,
+                edge_bottom=s_part.edge_bottom,
+                edge_left=s_part.edge_left,
+                edge_right=s_part.edge_right,
+                label=s_part.label
+            ).first()
+            
+            if existing_part:
+                existing_part.quantity += s_part.quantity
+                existing_part.save()
+            else:
+                s_part.pk = None
+                s_part.cabinet = target_furn
+                s_part.save()
+                
+    return {"success": True, "target_id": target_furn.id}
+
+@api.post("/furniture/create", auth=django_auth)
+def create_furniture(request, data: FurnitureCreateSchema):
+    with transaction.atomic():
+        furn = Furniture.objects.create(name=data.name, user=request.user)
+        
+        if all([data.h, data.w, data.d]):
+            material = None
+            th = 0
+            
+            if data.material_id:
+                material = Material.objects.filter(id=data.material_id, user=request.user).first()
+                if material:
+                    th = material.thickness
+
+            def create_p(label, l, w, q):
+                Panel.objects.create(
+                    cabinet=furn, 
+                    material=material,
+                    label=label,
+                    length=l, 
+                    width=w, 
+                    quantity=q
+                )
+
+            # Boky
+            create_p("Bok", data.h, data.d, 2)
+            
+            # Půda/Dno
+            inner_w = data.w - (2 * th)
+            create_p("Dno/Půda", inner_w, data.d, 2)
+            
+            # Police
+            if data.shelves and data.shelves > 0:
+                create_p("Police", inner_w - 2, data.d - 20, data.shelves)
+            
+            # Záda
+            create_p("Záda", data.h - 4, data.w - 4, 1)
+            
+            # Dveře
+            if not data.openFront:
+                create_p("Dveře", data.h - 4, data.w - 4, 1)
+
+    return {"success": True, "id": furn.id}

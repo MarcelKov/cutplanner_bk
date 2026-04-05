@@ -1,5 +1,9 @@
-{% for furn in furniture %}
-    {% include "inventory/partials/furniture/furniture_list_item.html" %}
-{% empty %}
-    <p id="no-furniture" class="p-4 text-xs italic opacity-40 text-center">No templates yet</p>
-{% endfor %}
+<div x-data="furnitureManager()">
+    <div class="space-y-1">
+        {% for furn in furniture %}
+        {% include "inventory/partials/furniture/furniture_list_item.html" %}
+        {% empty %}
+        <p id="no-furniture" class="p-4 text-xs italic opacity-40 text-center">No templates yet</p>
+        {% endfor %}
+    </div>
+</div>

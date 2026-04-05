@@ -15,11 +15,12 @@
 
         <button class="btn btn-error btn-ghost btn-xs font-bold uppercase"
             hx-delete="{% url 'delete_furniture' furniture.id %}"
-            hx-confirm="Delete entire template '{{ furniture.name }}'?" hx-target="#furn-item-{{ furniture.id }}"
-            hx-swap="outerHTML" hx-on::after-request="if(event.detail.successful) { 
-                    selectedFurniture = null; 
-                    document.getElementById('furniture-detail').innerHTML = '<div class=\'flex items-center justify-center h-full opacity-30 italic\'><p>Select a template to view or edit parts</p></div>';
-                }">
+            hx-confirm="Delete entire template '{{ furniture.name }}'?" hx-target="this" hx-swap="none"
+            hx-on::after-request="if(event.detail.successful) { 
+            selectedFurniture = null; 
+            document.getElementById('furniture-detail').innerHTML = '<div class=\'flex items-center justify-center h-full opacity-30 italic\'><p>Select a template to view or edit parts</p></div>';
+            htmx.trigger('#furniture-list', 'refresh-list');
+            }">
             Delete Template
         </button>
     </div>

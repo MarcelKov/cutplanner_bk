@@ -1,4 +1,4 @@
-from ninja import Schema
+from ninja import Schema, Field
 from typing import List, Optional
 
 
@@ -53,3 +53,18 @@ class ProjectBuildPayload(Schema):
 class ProjectBuildResponse(Schema):
     panels: List[PanelSchema]
     stockSheets: List[StockSheetSchema]
+
+class PasteSchema(Schema):
+    source_id: int
+    target_id: int
+
+class FurnitureCreateSchema(Schema):
+    name: str = Field(..., min_length=1, max_length=255)
+    
+    h: Optional[int] = Field(None, gt=0)
+    w: Optional[int] = Field(None, gt=0)
+    d: Optional[int] = Field(None, gt=0)
+    
+    material_id: Optional[int] = None
+    shelves: int = Field(0, ge=0)
+    openFront: bool = True
