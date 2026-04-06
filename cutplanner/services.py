@@ -80,9 +80,18 @@ class NestingEngine:
             sheets = self._extract(packer)
             all_results["sheets"].extend(sheets)
             
-        all_cuts = self._generate_cuts(all_results["sheets"])
-        all_results["stats"] = self._calculate_stats(all_results["sheets"], all_cuts)
-        all_results["cuts"] = all_cuts
+        stats_engine = NestingStatsEngine(
+            sheets=all_results["sheets"],
+            context=self.context,
+            kerf=self.kerf,
+            trim=self.trim
+        )
+        
+        final_data = stats_engine.get_full_results()
+        
+        all_results["stats"] = final_data["stats"]
+        all_results["cuts"] = final_data["cuts"]
+        
         return all_results
 
     def _run_packer(self, items, allow_rotation):
@@ -156,10 +165,30 @@ class NestingEngine:
 
         return used_sheets
     
-    def _generate_cuts(self, sheets):
+
+class NestingStatsEngine:
+    def __init__(self, sheets, context, kerf, trim):
+        self.sheets = sheets
+        self.context = context
+        self.kerf = kerf
+        self.trim = trim
+
+    def get_full_results(self):
+        # 1. Nejdříve vygenerujeme řezy (potřebné pro délku řezu v stats)
+        all_cuts = self._generate_cuts()
+        
+        # 2. Spočítáme statistiky
+        stats = self._calculate_stats(all_cuts)
+        
+        return {
+            "stats": stats,
+            "cuts": all_cuts
+        }
+    
+    def _generate_cuts(self,):
         k = self.kerf
         all_cuts = []
-        for sheet in sheets:
+        for sheet in self.sheets:
             sheet_id = sheet["uid"]
             parts = sheet["parts"]
             if not parts:
@@ -201,6 +230,10 @@ class NestingEngine:
                 
         for i, cut in enumerate(all_cuts):
             cut["id"] = f"cut-{i}"
+            dx = cut["x2"] - cut["x1"]
+            dy = cut["y2"] - cut["y1"]
+            length = math.sqrt(dx**2 + dy**2)
+            cut["length"] = round(length, 2)
 
         return all_cuts
 
@@ -262,9 +295,7 @@ class NestingEngine:
                         self._recursive_cut(right, inside_parts, result_cuts)
                         return
     
-    
-
-    def _calculate_stats(self, used_sheets, all_cuts):
+    def _calculate_stats(self, all_cuts):
         total_used_area = 0 
         total_parts_area = 0 
         total_cut_length = 0
@@ -273,7 +304,7 @@ class NestingEngine:
         material_usage_parts = {}
         edgeband_usage = {} 
 
-        for s in used_sheets:
+        for s in self.sheets:
             sheet_area = s["width"] * s["height"]
             total_used_area += sheet_area
             
@@ -328,8 +359,7 @@ class NestingEngine:
                         edgeband_usage[eb_id]["cost"] += edge_len_m * float(eb_data.get("price", 0))
 
         for c in all_cuts:
-            length = math.sqrt((c["x2"] - c["x1"])**2 + (c["y2"] - c["y1"])**2)
-            total_cut_length += length / 1000
+            total_cut_length += c["length"] / 1000
 
         utilization = (total_parts_area / total_used_area * 100) if total_used_area > 0 else 0
         total_material_sheet_cost = sum(m["cost"] for m in material_usage.values())
@@ -341,7 +371,7 @@ class NestingEngine:
             "bladeThickness": self.kerf,
             "totalPartsArea": round(total_parts_area / 1_000_000, 2), 
             "totalUsedArea": round(total_used_area / 1_000_000, 2), 
-            "sheetCount": len(used_sheets),
+            "sheetCount": len(self.sheets),
             "totalCutLength": round(total_cut_length, 2),
             "cutCount": len(all_cuts),
             "materialUsage": material_usage,

@@ -1,5 +1,5 @@
 from ninja import Schema, Field
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 
 class TrimSchema(Schema):
@@ -68,3 +68,34 @@ class FurnitureCreateSchema(Schema):
     material_id: Optional[int] = None
     shelves: int = Field(0, ge=0)
     openFront: bool = True
+
+
+class ManualPartSchema(Schema):
+    uid: str
+    groupId: int
+    label: str
+    w: float
+    h: float
+    x: float
+    y: float
+
+    rotated: bool = False 
+    material: Optional[int] = None
+    edges: Dict[str, Optional[int]] = {
+        "top": None, "bottom": None, "left": None, "right": None
+    }
+
+class ManualSheetSchema(Schema):
+    uid: str
+    label: str
+    width: float
+    height: float
+    material: Optional[int] = None
+    parts: List[ManualPartSchema]
+
+class ManualLayoutPayload(Schema):
+    sheets: List[ManualSheetSchema]
+    bladeThickness: float
+    trim: Optional[Dict[str, float]] = {
+        "top": 0, "bottom": 0, "left": 0, "right": 0
+    }

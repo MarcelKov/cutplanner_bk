@@ -73,9 +73,8 @@
                                     </span>
                                 </td>
 
-                                <td class="font-bold text-xs">
-                                    <span
-                                        x-text="`${(Math.sqrt(Math.pow(cut.x2 - cut.x1, 2) + Math.pow(cut.y2 - cut.y1, 2)) / 1000).toFixed(2)}m` "></span>
+                                <td class="font-bold text-xs text-right">
+                                    <span x-text="`${(cut.length / 1000).toFixed(2)}m` "></span>
                                 </td>
 
                                 <td class="font-mono text-[10px] opacity-70">

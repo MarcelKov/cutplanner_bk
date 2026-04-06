@@ -14,6 +14,9 @@
             <span x-show="panels.length > 0" class="opacity-30">|</span>
             <span x-show="stockSheets.length > 0" x-text="stockSheets.length + ' Sheets'"></span>
         </div>
+        <a href="{% url 'home' %}" class="btn btn-primary btn-outline">
+                ← Back to Dashboard
+        </a>
     </div>
 
     <div class="card bg-base-100 shadow-xl border border-base-200">
@@ -202,7 +205,7 @@
         </template>
     </div>
 </div>
-</div>
+
 
 
 {% endblock %}

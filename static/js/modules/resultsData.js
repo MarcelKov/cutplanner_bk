@@ -1,4 +1,4 @@
-import { optimize } from './api.js';
+import { optimize, sendCuttingPlan } from './api.js';
 import { KonvaRenderer } from './canvas.js';
 import { PDFExporter } from './pdf.js';
 import { getGroupedParts } from './utils.js';
@@ -31,11 +31,21 @@ export const resultsData = () => ({
     cuttingRate: 0.0,
 
     isOptimizing: false,
-    errorMessage: '',
     currentSheetIndex: 0,
     konvaStage: null,
     isExporting: false,
     costMode: 'sheets',
+
+    recipientEmail: '',
+    recipientList: [],
+    isSending: false,
+    emailErrorMessage: '',
+
+    toast: {
+        show: false,
+        message: '',
+        type: 'success'
+    },
 
     init() {
         if (this.optimizationResults?.sheets?.length > 0) {
@@ -44,6 +54,97 @@ export const resultsData = () => ({
         this.$watch('currentSheetIndex', () => {
             this.drawCanvas();
         });
+    },
+
+    showToast(message, type = 'success') {
+        this.toast.message = message;
+        this.toast.type = type;
+        this.toast.show = true;
+
+        setTimeout(() => {
+            this.toast.show = false;
+        }, 4000);
+    },
+
+    addEmail() {
+        this.emailErrorMessage = '';
+
+        const emailRegex = /(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/;
+        const trimmedEmail = this.recipientEmail.trim();
+
+        if (trimmedEmail === '' || !emailRegex.test(trimmedEmail)) {
+            this.emailErrorMessage = 'Please enter a valid email address.';
+            setTimeout(() => { this.emailErrorMessage = ''; }, 3000);
+            return;
+        }
+
+        if (this.recipientList.includes(trimmedEmail)) {
+            this.emailErrorMessage = 'This email is already in the list.';
+            setTimeout(() => { this.emailErrorMessage = ''; }, 3000);
+            return;
+        }
+
+        this.recipientList.push(trimmedEmail);
+        this.recipientEmail = '';
+    },
+
+    removeEmail(index) {
+        this.recipientList.splice(index, 1);
+    },
+
+    async sendViaEmail() {
+        if (this.recipientList.length === 0) return;
+
+        const data = this.preparePdfData();
+        if (!data) return;
+
+        this.isSending = true;
+        this.emailErrorMessage = '';
+
+        try {
+            // Generování PDF 
+            const pdfBlob = await PDFExporter.generateBlob(data.sheets, data.cuts, data.stats, "Cutting_Plan");
+
+            // Příprava FormData
+            const formData = new FormData();
+            formData.append('pdf_file', pdfBlob, 'cutting_plan.pdf');
+            formData.append('recipients', JSON.stringify(this.recipientList));
+
+            // Odeslání přes API
+            await sendCuttingPlan(formData);
+
+            // 4. Success handling
+            email_modal.close();
+            this.recipientList = [];
+            this.showToast("Success! The cutting plan has been sent to all recipients.", "success");
+        } catch (err) {
+            console.error("Email error:", err);
+            this.emailErrorMessage = err.message;
+        } finally {
+            this.isSending = false;
+        }
+    },
+
+    preparePdfData() {
+        const sheetsToExport = this.optimizationResults.sheets.filter(s => s.parts && s.parts.length > 0);
+
+        if (sheetsToExport.length === 0) {
+            this.showToast("No results for export.", "error");
+            return null;
+        }
+
+        const stats = { ...this.optimizationResults.stats };
+        const rate = parseFloat(this.cuttingRate) || 0;
+        const length = parseFloat(stats.totalCutLength) || 0;
+
+        stats.cuttingRate = rate;
+        stats.laborCost = rate * length;
+
+        return {
+            sheets: sheetsToExport,
+            cuts: this.optimizationResults.cuts || [],
+            stats: stats
+        };
     },
 
     async generatePlan() {
@@ -75,7 +176,7 @@ export const resultsData = () => ({
             this.$nextTick(() => this.setupKonva());
         } catch (error) {
             console.error("Nesting Error:", error);
-            this.errorMessage = "Unable to generate plan.";
+            this.showToast("Unable to generate plan.", "error");
         } finally {
             this.isOptimizing = false;
         }
@@ -116,22 +217,14 @@ export const resultsData = () => ({
         this.drawCanvas();
     },
     async exportToPDF() {
-        const sheetsToExport = this.optimizationResults.sheets.filter(s => s.parts && s.parts.length > 0);
-
-        if (sheetsToExport.length === 0) {
-            this.errorMessage = "No results for export.";
-            setTimeout(() => { this.errorMessage = ''; }, 3000);
-            return;
-        }
-
+        const data = this.preparePdfData();
+        if (!data) return;
         this.isExporting = true;
-
         try {
-            await PDFExporter.generate(sheetsToExport, "Optimization_Cutting_Plan");
+            await PDFExporter.generate(data.sheets, data.cuts, data.stats, "Optimization_Cutting_Plan");
         } catch (err) {
             console.error("PDF Export failed:", err);
-            this.errorMessage = "Chyba při generování PDF.";
-            setTimeout(() => { this.errorMessage = ''; }, 3000);
+            this.showToast("PDF Export failed", "error");
         } finally {
             this.isExporting = false;
         }

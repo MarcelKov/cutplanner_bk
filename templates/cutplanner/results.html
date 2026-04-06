@@ -17,6 +17,15 @@
                 PDF Export
             </button>
 
+            <button type="button" class="btn btn-secondary" @click="email_modal.showModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                Send via Email
+            </button>
+
             <a href="{% url 'cutting_app' %}" class="btn btn-primary btn-outline">
                 ← Back to Editor
             </a>
@@ -47,12 +56,27 @@
 
     </div>
     <div class="toast toast-end toast-bottom z-[100]">
-        <template x-if="errorMessage">
-            <div class="alert alert-error shadow-lg transition-all">
-                <span x-text="errorMessage"></span>
+        <template x-if="toast.show">
+            <div class="alert shadow-lg border-l-4 transition-all duration-300"
+                :class="toast.type === 'success' ? 'alert-success border-success' : 'alert-error border-error'">
+                <div class="flex items-center gap-2">
+                    <svg x-show="toast.type === 'success'" xmlns="http://www.w3.org/2000/svg"
+                        class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <svg x-show="toast.type === 'error'" xmlns="http://www.w3.org/2000/svg"
+                        class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+
+                    <span x-text="toast.message" class="font-medium"></span>
+                </div>
             </div>
         </template>
     </div>
 
+    {% include 'cutplanner/result_partials/email_modal.html' %}
 </div>
 {% endblock %}

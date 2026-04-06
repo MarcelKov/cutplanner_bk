@@ -1,10 +1,16 @@
+import json
 from ninja import NinjaAPI
 from ninja.security import django_auth
 from .models import Project, Panel, StockSheet , EdgeBanding , Material, Furniture
 from django.db import transaction
-from .schemas import SaveProjectPayload, ProjectDataSchema, ProjectBuildPayload,ProjectBuildResponse, PasteSchema, FurnitureCreateSchema
+from .schemas import SaveProjectPayload, ProjectDataSchema, ProjectBuildPayload,ProjectBuildResponse, PasteSchema, FurnitureCreateSchema, ManualLayoutPayload
 from django.shortcuts import get_object_or_404
-from .services import NestingEngine
+from .services import NestingEngine, NestingStatsEngine
+
+from django.core.mail import EmailMessage
+from django.conf import settings
+from ninja import File, Form
+from ninja.files import UploadedFile
 
 api = NinjaAPI()
 
@@ -183,3 +189,81 @@ def create_furniture(request, data: FurnitureCreateSchema):
                 create_p("Dveře", data.h - 4, data.w - 4, 1)
 
     return {"success": True, "id": furn.id}
+
+@api.post("/manual-planner/calculate-stats")
+def calculate_manual_stats(request, data: ManualLayoutPayload):
+    materials = {
+        m.id: {
+            "name": m.name, 
+            "price": float(m.price_per_m2 or 0), 
+            "thickness": float(m.thickness),
+            "grain": m.grain
+        } 
+        for m in Material.objects.filter(user=request.user)
+    }
+
+    edgebands = {
+        e.id: {
+            "name": e.name, 
+            "price": float(e.price_per_m or 0), 
+            "thickness": float(e.thickness)
+        } 
+        for e in EdgeBanding.objects.filter(user=request.user)
+    }
+
+    
+    context = {"materials": materials, "edgebands": edgebands}
+
+    formatted_sheets = []
+    for s in data.sheets:
+        s_dict = s.dict()
+        s_dict["material_id"] = s_dict.pop("material") 
+        
+        for p in s_dict["parts"]:
+            p["material_id"] = p.pop("material") 
+            
+        formatted_sheets.append(s_dict)
+
+    from types import SimpleNamespace
+    trim_obj = SimpleNamespace(**data.trim) 
+
+    stats_engine = NestingStatsEngine(
+        sheets=formatted_sheets,
+        context=context,
+        kerf=data.bladeThickness,
+        trim=trim_obj
+    )
+    
+    return stats_engine.get_full_results()
+
+@api.post("/cutting/send-plan", auth=django_auth)
+def send_plan_via_email(request, pdf_file: UploadedFile = File(...), recipients: str = Form(...)):
+    try:
+        recipient_list = json.loads(recipients)
+        
+        if not recipient_list or not isinstance(recipient_list, list):
+            return 400, {"detail": "Invalid recipient list."}
+
+        email = EmailMessage(
+            subject="Cutting Plan Optimization Results",
+            body="Hello,\n\nIn the attachment, you will find the generated cutting plan for your project.",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=recipient_list,
+        )
+
+        email.attach(
+            pdf_file.name,
+            pdf_file.read(),
+            'application/pdf'
+        )
+
+        email.send(fail_silently=False)
+
+        return {"success": True, "sent_to": len(recipient_list)}
+
+    except json.JSONDecodeError:
+        return 400, {"detail": "Recipients data is not a valid JSON string."}
+    except Exception as e:
+        # V logu uvidíš chybu, pokud např. selže SMTP
+        print(f"Email Error: {e}")
+        return 500, {"detail": "Failed to send email. Check server logs."}

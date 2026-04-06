@@ -1,5 +1,5 @@
 import { KonvaRenderer } from './canvas.js';
-import { PDFExporter } from './pdf.js';
+import { calculateManualStats } from './api.js';
 
 export const manualPlannerData = () => ({
     panels: Alpine.$persist([]),
@@ -20,7 +20,7 @@ export const manualPlannerData = () => ({
         bladeThickness: 0
     },
     errorMessage: '',
-    isExporting: false,
+    isOptimizing: false,
 
     initManualEditor() {
         this.$nextTick(() => {
@@ -72,7 +72,13 @@ export const manualPlannerData = () => ({
                             w: parseFloat(p.length),
                             h: parseFloat(p.width),
                             material: p.material,
-                            isVirtual: false
+                            isVirtual: false,
+                            edges: {
+                                top: p.edge_top || null,
+                                bottom: p.edge_bottom || null,
+                                left: p.edge_left || null,
+                                right: p.edge_right || null
+                            }
                         });
                     }
                 });
@@ -250,7 +256,7 @@ export const manualPlannerData = () => ({
                         other.y + other.h + kerf,
                         other.y - part.h - kerf
                     ];
-                    
+
                     yTargets.forEach(target => {
                         const dist = Math.abs(rawY - target);
                         if (dist < minDistY) {
@@ -347,28 +353,6 @@ export const manualPlannerData = () => ({
         }
     },
 
-
-    async exportToPDF() {
-        const sheetsToExport = this.manualLayout.sheets.filter(s => s.parts.length > 0);
-
-        if (sheetsToExport.length === 0) {
-            this.errorMessage = "No panels are placed on any sheet";
-            setTimeout(() => { this.errorMessage = ''; }, 3000);
-            return;
-        }
-
-        this.isExporting = true;
-
-        try {
-            await PDFExporter.generate(this.manualLayout.sheets, "Manual_Cutting_Plan");
-        } catch (err) {
-            console.error("PDF Export failed:", err);
-            this.showError("Failed to generate PDF. Check console.");
-        } finally {
-            this.isExporting = false;
-        }
-    },
-
     returnPartToUnfitted(part) {
         if (part.rotated) {
             const tempW = part.w;
@@ -451,5 +435,63 @@ export const manualPlannerData = () => ({
         this.selectedPartY = newPart.y;
 
         this.renderManualCanvas();
+    },
+
+    async finalizeManualPlan() {
+
+        const activeSheets = this.manualLayout.sheets.filter(s => s.parts && s.parts.length > 0);
+        if (activeSheets.length === 0) {
+            this.errorMessage = "At least one part must be placed on a sheet.";
+            setTimeout(() => { this.errorMessage = ''; }, 3000);
+            return;
+        }
+
+        this.isOptimizing = true;
+
+        try {
+            const payload = {
+                sheets: activeSheets.map(s => ({
+                    uid: s.uid,
+                    label: s.label,
+                    width: s.width,
+                    height: s.height,
+                    material: s.material,
+                    parts: s.parts.map(p => ({
+                        uid: p.uid,
+                        groupId: p.groupId,
+                        label: p.label,
+                        w: p.w,
+                        h: p.h,
+                        x: p.x,
+                        y: p.y,
+                        rotated: p.rotated || false,
+                        material: p.material,
+                        edges: p.edges
+                    }))
+                })),
+                bladeThickness: this.settings.bladeThickness,
+                trim: { top: 0, bottom: 0, left: 0, right: 0 }
+            };
+
+            const results = await calculateManualStats(payload);
+
+            const finalResults = {
+                sheets: activeSheets,
+                cuts: results.cuts,
+                stats: results.stats
+            };
+
+            localStorage.setItem('_x_optimizationResults', JSON.stringify(finalResults));
+
+            this.$nextTick(() => {
+                window.location.href = '/results/';
+            });
+
+        } catch (err) {
+            console.error("Finalization failed:", err);
+            this.errorMessage = "Chyba při zpracování plánu.";
+        } finally {
+            this.isOptimizing = false;
+        }
     },
 });

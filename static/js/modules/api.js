@@ -1,6 +1,7 @@
-const getHeaders = () => {
+const getHeaders = (isFormData = false) => {
     const csrfElement = document.querySelector('[name=csrfmiddlewaretoken]');
-    const headers = { 'Content-Type': 'application/json' };
+    const headers = isFormData ? {} : { 'Content-Type': 'application/json' };
+    
     if (csrfElement) {
         headers['X-CSRFToken'] = csrfElement.value;
     }
@@ -81,4 +82,32 @@ async function createFurniture(payload) {
     return response.json();
 }
 
-export { save, load, optimize ,loadFromTemplates, pasteFurniture, createFurniture};
+async function calculateManualStats(payload) {
+    const response = await fetch('/api/manual-planner/calculate-stats', {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(payload)
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Manual stats calculation failed');
+    }
+    return response.json();
+}
+
+async function sendCuttingPlan(formData) {
+    const response = await fetch('/api/cutting/send-plan', {
+        method: 'POST',
+        headers: getHeaders(true), 
+        body: formData
+    });
+    
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to send email');
+    }
+    return response.json();
+}
+
+
+export { save, load, optimize ,loadFromTemplates, pasteFurniture, createFurniture, calculateManualStats, sendCuttingPlan};

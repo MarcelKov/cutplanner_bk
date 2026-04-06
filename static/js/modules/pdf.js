@@ -1,73 +1,248 @@
 import { KonvaRenderer } from './canvas.js';
 
 export const PDFExporter = {
-    async generate(sheets, fileName = "Cutting_Plan") {
 
+    async generate(sheets, all_cuts = [], stats = {}, fileName = "Narezovy_plan") {
+        const doc = await this._buildPDF(sheets, all_cuts, stats, fileName);
+        window.open(doc.output('bloburl'), '_blank');
+    },
+
+    async generateBlob(sheets, all_cuts = [], stats = {}, fileName = "Narezovy_plan") {
+        const doc = await this._buildPDF(sheets, all_cuts, stats, fileName);
+        return doc.output('blob');
+    },
+
+
+    safeText(text) {
+        if (!text) return "";
+        return text.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    },
+
+    async _buildPDF(sheets, all_cuts = [], stats = {}, fileName = "Narezovy_plan") {
         const validSheets = sheets.filter(s => s.parts && s.parts.length > 0);
         if (validSheets.length === 0) {
-            alert("No parts have been placed on any sheets yet!");
+            alert("Žádné díly k exportu!");
             return;
         }
 
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('p', 'mm', 'a4');
         const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
 
         const tempDiv = document.createElement('div');
         tempDiv.style.display = 'none';
         document.body.appendChild(tempDiv);
 
-        for (let i = 0; i < validSheets.length; i++) {
-            const sheet = sheets[i];
-            if (i > 0) doc.addPage();
-            doc.setFontSize(16);
-            doc.text(`Sheet: ${sheet.label || sheet.groupLabel}`, 15, 20);
-            doc.setFontSize(10);
-            doc.text(`Dimensions: ${sheet.width} x ${sheet.height} mm`, 15, 28);
+        const purpleColor = [120, 113, 255];
+        const bladeThickness = stats.bladeThickness || 3;
 
-            const imgData = await this.exportSheetToImage(sheet, tempDiv);
+        const renderFooter = (data) => {
+            const str = "Strana " + doc.internal.getNumberOfPages();
+            doc.setFontSize(8);
+            doc.setTextColor(150, 150, 150);
+            doc.setFont('helvetica', 'normal');
+
+            doc.text(str, pageWidth - 25, pageHeight - 10);
+            doc.text(this.safeText(fileName), 15, pageHeight - 10);
+        };
+
+
+        for (let i = 0; i < validSheets.length; i++) {
+            const sheet = validSheets[i];
+            if (i > 0) doc.addPage();
+
+            // Header
+            doc.setFillColor(...purpleColor);
+            doc.rect(0, 0, pageWidth, 25, 'F');
+
+            doc.setFontSize(16);
+            doc.setTextColor(255, 255, 255);
+            doc.text(this.safeText(`Deska: ${sheet.label || sheet.groupLabel}`), 15, 12);
+
+            doc.setFontSize(9);
+            doc.text(this.safeText(`Rozměr desky: ${sheet.width} x ${sheet.height} mm`), 15, 19);
+
+            // Cutting plan image
+            const sheetId = sheet.id || sheet.uid || sheet.label;
+            const sheetCuts = all_cuts.filter(c => c.sheet_uid === sheetId);
+
+            const imgData = await this.exportSheetToImage(sheet, sheetCuts, bladeThickness, tempDiv);
 
             const imgProps = doc.getImageProperties(imgData);
             const pdfImgWidth = pageWidth - 30;
             const pdfImgHeight = (imgProps.height * pdfImgWidth) / imgProps.width;
 
-            doc.addImage(imgData, 'PNG', 15, 35, pdfImgWidth, pdfImgHeight);
+            doc.setDrawColor(220, 220, 220);
+            doc.rect(15, 30, pdfImgWidth, pdfImgHeight);
+            doc.addImage(imgData, 'PNG', 15, 30, pdfImgWidth, pdfImgHeight);
 
-            let currentY = 35 + pdfImgHeight + 15;
-            doc.setFontSize(12);
-            doc.text("Parts on this sheet:", 15, currentY);
-            currentY += 8;
+            //TABLE 1 Dílce
+            const startYPanels = 30 + pdfImgHeight + 10;
 
-            doc.setFontSize(9);
-            sheet.parts.forEach((p, pIdx) => {
-                const posX = Number(p.x).toFixed(1);
-                const posY = Number(p.y).toFixed(1);
+            // Nadpis
+            doc.setFontSize(10);
+            doc.setTextColor(...purpleColor);
+            doc.setFont('helvetica', 'bold');
+            doc.text(this.safeText("Dilce na teto desce:"), 15, startYPanels);
 
-                const safeLabel = p.label.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    
-                const partInfo = `${pIdx + 1}. ${safeLabel} (${p.w}x${p.h} mm) - Position: [${posX}, ${posY}]`;
+            const tableData = sheet.parts.map((p, idx) => [
+                idx + 1,
+                this.safeText(p.label),
+                `${p.w} x ${p.h}`,
+                Number(p.x).toFixed(1),
+                Number(p.y).toFixed(1)
+            ]);
 
-                doc.text(partInfo, 20, currentY);
-                
-                currentY += 6;
-
-                if (currentY > 280) {
-                    doc.addPage();
-                    currentY = 20;
-                }
+            doc.autoTable({
+                startY: startYPanels + 3,
+                head: [['ID', 'Nazev dilu', 'Rozmer (mm)', 'X', 'Y']],
+                body: tableData,
+                theme: 'striped',
+                styles: { fontSize: 8, cellPadding: 3, font: 'helvetica', valign: 'middle' },
+                headStyles: { fillColor: purpleColor, textColor: [255, 255, 255], fontStyle: 'bold', halign: 'left' },
+                columnStyles: {
+                    0: { cellWidth: 12, halign: 'left' },
+                    1: { halign: 'left' },
+                    2: { halign: 'left' },
+                    3: { halign: 'left', cellWidth: 20 },
+                    4: { halign: 'left', cellWidth: 20 }
+                },
+                margin: { left: 15, right: 15 },
+                didDrawPage: renderFooter
             });
+
+
+            if (sheetCuts.length > 0) {
+                const finalY = doc.lastAutoTable.finalY;
+
+                // Nadpis 
+                doc.setFontSize(10);
+                doc.setTextColor(...purpleColor);
+                doc.setFont('helvetica', 'bold');
+                doc.text(this.safeText("Seznam rezu na teto desce:"), 15, finalY + 10);
+
+                const cutsData = sheetCuts.map((c, idx) => {
+                    const isVertical = Math.abs(c.x1 - c.x2) < 0.1;
+                    const type = isVertical ? 'Svisly' : 'Vodorovny';
+
+                    const startPoint = `${Math.round(c.x1)},${Math.round(c.y1)}`;
+                    const endPoint = `${Math.round(c.x2)},${Math.round(c.y2)}`;
+
+                    return [
+                        idx + 1,
+                        this.safeText(type),
+                        startPoint,
+                        endPoint,
+                        Number(c.length).toFixed(1)
+                    ];
+                });
+
+                doc.autoTable({
+                    startY: finalY + 13,
+                    // Hlavička bez prázdného sloupce pro šipku
+                    head: [['#', 'Typ rezu', 'Start (X,Y)', 'Konec (X,Y)', 'Delka (mm)']],
+                    body: cutsData,
+                    theme: 'striped',
+                    styles: { fontSize: 8, cellPadding: 3, font: 'helvetica', valign: 'middle' },
+                    headStyles: { fillColor: purpleColor, textColor: [255, 255, 255], fontStyle: 'bold', halign: 'left' },
+                    columnStyles: {
+                        0: { cellWidth: 10, halign: 'left' },
+                        1: { cellWidth: 25, halign: 'left' },
+                        2: { halign: 'left' }, // Start
+                        3: { halign: 'left' }, // Konec
+                        4: { halign: 'left' }  // Délka
+                    },
+                    margin: { left: 15, right: 15 },
+                    didDrawPage: renderFooter
+                });
+            }
         }
 
+        //statistika
+        doc.addPage();
 
-        doc.setProperties({
-            title: fileName
-        });
-        window.open(doc.output('bloburl'), '_blank');
+        doc.setFillColor(...purpleColor);
+        doc.rect(0, 0, pageWidth, 40, 'F');
+
+        doc.setFontSize(22);
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.text(this.safeText("Statistika Projektu"), 15, 25);
+
+        let currentY = 55;
+
+        const drawStatBlock = (label, value, unit, x, y, width) => {
+            doc.setDrawColor(...purpleColor);
+            doc.setLineWidth(0.5);
+            doc.line(x, y, x + width, y);
+
+            doc.setFontSize(9);
+            doc.setTextColor(100, 100, 100);
+            doc.setFont('helvetica', 'normal');
+            doc.text(this.safeText(label), x, y + 7);
+
+            doc.setFontSize(14);
+            doc.setTextColor(...purpleColor);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`${value} ${unit}`, x, y + 16);
+        };
+
+
+        const colW = (pageWidth - 40) / 3;
+        drawStatBlock("Vyuziti", stats.utilization, "%", 15, currentY, colW);
+        drawStatBlock("Počet desek", stats.sheetCount, "ks", 15 + colW + 5, currentY, colW);
+        drawStatBlock("Tloušťka řezu", stats.bladeThickness, "mm", 15 + (colW + 5) * 2, currentY, colW);
+
+        currentY += 25;
+
+        drawStatBlock("Plocha dílců", stats.totalPartsArea, "m2", 15, currentY, colW);
+        drawStatBlock("Celková délka řezů", stats.totalCutLength, "m", 15 + colW + 5, currentY, colW);
+        drawStatBlock("Počet řezů", stats.cutCount, "", 15 + (colW + 5) * 2, currentY, colW);
+
+        currentY += 35;
+
+        doc.setFillColor(248, 249, 250);
+        doc.rect(15, currentY, pageWidth - 30, 55, 'F');
+        doc.setDrawColor(230, 230, 230);
+        doc.rect(15, currentY, pageWidth - 30, 55, 'D');
+
+        doc.setFontSize(12);
+        doc.setTextColor(...purpleColor);
+        doc.text(this.safeText("Odhadovane naklady"), 20, currentY + 10);
+
+        const drawPriceRow = (label, price, y) => {
+            doc.setFontSize(10);
+            doc.setTextColor(80, 80, 80);
+            doc.setFont('helvetica', 'normal');
+            doc.text(this.safeText(label), 20, y);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`${Number(price).toFixed(2)} Kc`, pageWidth - 20, y, { align: 'right' });
+        };
+
+
+        drawPriceRow("Naklady na material (cele desky):", stats.totalMaterialSheetCost, currentY + 20);
+        drawPriceRow("Naklady na olepeni hran:", stats.totalEdgebandCost, currentY + 28);
+        const laborLabel = `Naklady na rezani (Sazba: ${stats.cuttingRate} Kc/m):`;
+        drawPriceRow(laborLabel, stats.laborCost, currentY + 36);
+
+        doc.setDrawColor(...purpleColor);
+        doc.setLineWidth(0.5);
+        doc.line(20, currentY + 41, pageWidth - 20, currentY + 41);
+
+        doc.setFontSize(11);
+        doc.setTextColor(0, 0, 0);
+
+        const totalProjectCost = stats.totalMaterialSheetCost + stats.totalEdgebandCost + stats.laborCost;
+        drawPriceRow("CELKEM:", totalProjectCost, currentY + 48);
+
+        renderFooter();
 
         document.body.removeChild(tempDiv);
+        return doc;
     },
 
-    exportSheetToImage(sheet, container) {
+    exportSheetToImage(sheet, sheetCuts, bladeThickness, container) {
         const exportWidth = 1600;
         const exportHeight = 1000;
 
@@ -101,6 +276,11 @@ export const PDFExporter = {
         sheet.parts.forEach(part => {
             const group = KonvaRenderer.createPart(part, layout, false);
             layer.add(group);
+        });
+
+        sheetCuts.forEach(cut => {
+            const cutLine = KonvaRenderer.createCutLine(cut, layout, bladeThickness);
+            layer.add(cutLine);
         });
 
         layer.draw();
