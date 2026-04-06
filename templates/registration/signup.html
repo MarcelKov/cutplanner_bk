@@ -7,7 +7,7 @@
         <div class="card-body">
             <h2 class="card-title justify-center text-2xl font-bold text-base-content mb-2">
                 Create an Account
-            </h2>        
+            </h2>
             <form method="post">
                 {% csrf_token %}
                 <div class="space-y-2">
@@ -20,11 +20,23 @@
                 </div>
             </form>
             <p class="text-center text-sm text-base-content/70">
-                Already have an account? 
+                Already have an account?
                 <a href="{% url 'login' %}" class="link link-primary font-bold no-underline hover:underline">
                     Login here
                 </a>
             </p>
+            <div class="pt-2">
+                <a href="{% url 'home' %}"
+                    class="link link-hover text-xs opacity-50 flex items-center justify-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    Back to Home
+                </a>
+            </div>
+
         </div>
     </div>
 </div>

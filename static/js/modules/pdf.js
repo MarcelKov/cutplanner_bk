@@ -120,7 +120,7 @@ export const PDFExporter = {
                 doc.setFontSize(10);
                 doc.setTextColor(...purpleColor);
                 doc.setFont('helvetica', 'bold');
-                doc.text(this.safeText("Seznam rezu na teto desce:"), 15, finalY + 10);
+                doc.text(this.safeText("Rezy na teto desce:"), 15, finalY + 10);
 
                 const cutsData = sheetCuts.map((c, idx) => {
                     const isVertical = Math.abs(c.x1 - c.x2) < 0.1;
@@ -235,6 +235,95 @@ export const PDFExporter = {
 
         const totalProjectCost = stats.totalMaterialSheetCost + stats.totalEdgebandCost + stats.laborCost;
         drawPriceRow("CELKEM:", totalProjectCost, currentY + 48);
+
+        renderFooter();
+
+        // deatil materialu
+        doc.addPage();
+
+        doc.setFillColor(...purpleColor);
+        doc.rect(0, 0, pageWidth, 40, 'F');
+        doc.setFontSize(22);
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.text(this.safeText("Detailní rozpis materiálu"), 15, 25);
+
+        let nextY = 55;
+
+        // 1. TABULKA: SPOTŘEBA DESEK (Celé desky)
+        if (Object.keys(stats.materialUsage).length > 0) {
+            doc.setFontSize(14);
+            doc.setTextColor(...purpleColor);
+            doc.text(this.safeText("Spotřeba materiálu pro celé desky"), 15, nextY);
+
+            const matBody = Object.values(stats.materialUsage).map(item => [
+                item.label,
+                `${Number(item.area).toFixed(2)} m2`,
+                `${Number(item.cost).toFixed(2)} Kc`
+            ]);
+
+            doc.autoTable({
+                startY: nextY + 5,
+                head: [['Materiál', 'Plocha', 'Cena']],
+                body: matBody,
+                theme: 'striped',
+                headStyles: { fillColor: purpleColor },
+                styles: { font: 'helvetica', fontSize: 10 },
+                didDrawPage: renderFooter
+            });
+            nextY = doc.lastAutoTable.finalY + 15;
+        }
+
+        // 2. TABULKA: SPOTŘEBA HRAN
+        if (Object.keys(stats.edgebandUsage).length > 0) {
+            doc.setFontSize(14);
+            doc.setTextColor(...purpleColor);
+            doc.text(this.safeText("Spotřeba hranovacích pásek"), 15, nextY);
+
+            const ebBody = Object.values(stats.edgebandUsage).map(item => [
+                item.label,
+                `${Number(item.length).toFixed(2)} m`,
+                `${Number(item.cost).toFixed(2)} Kc`
+            ]);
+
+            doc.autoTable({
+                startY: nextY + 5,
+                head: [['Hrana', 'Celková delka', 'Cena']],
+                body: ebBody,
+                theme: 'striped',
+                headStyles: { fillColor: purpleColor },
+                styles: { font: 'helvetica', fontSize: 10 },
+                didDrawPage: renderFooter
+            });
+            nextY = doc.lastAutoTable.finalY + 15;
+        }
+
+        if (Object.keys(stats.materialUsageParts).length > 0) {
+            if (nextY > pageHeight - 60) {
+                doc.addPage();
+                nextY = 20;
+            }
+
+            doc.setFontSize(14);
+            doc.setTextColor(...purpleColor);
+            doc.text(this.safeText("Spotřeba materiálu pouze pro dílce"), 15, nextY);
+
+            const partsBody = Object.values(stats.materialUsageParts).map(item => [
+                item.label,
+                `${Number(item.area).toFixed(2)} m2`,
+                `${Number(item.cost).toFixed(2)} Kc`
+            ]);
+
+            doc.autoTable({
+                startY: nextY + 5,
+                head: [['Material', 'Plocha', 'Cena']],
+                body: partsBody,
+                theme: 'striped',
+                headStyles: { fillColor: purpleColor },
+                styles: { font: 'helvetica', fontSize: 10 },
+                didDrawPage: renderFooter
+            });
+        }
 
         renderFooter();
 

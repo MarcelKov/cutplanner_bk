@@ -5,10 +5,16 @@ from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404,redirect
 from django.http import HttpResponse
+from django.contrib import messages
 from .models import Project, Material,EdgeBanding,Furniture,StockSheet,Panel
 
+
+class BaseLoginRequiredView(LoginRequiredMixin, TemplateView):
+    def handle_no_permission(self):
+        messages.info(self.request, "You need to be logged in to access this feature.")
+        return redirect('login')
 
 class HomeView(TemplateView):
     template_name = "home/index.html"
@@ -24,7 +30,7 @@ class SignUpView(CreateView):
     success_url = reverse_lazy('login')
     template_name = 'registration/signup.html'
 
-class ProjectBuilderView(LoginRequiredMixin, TemplateView):
+class ProjectBuilderView(BaseLoginRequiredView):
     template_name = "home/project_builder.html"
 
     def get_context_data(self, **kwargs):
@@ -48,13 +54,13 @@ class CuttingAppView(TemplateView):
             context['edges'] = []
         return context
 
-class CuttingResultsView(TemplateView):
+class CuttingResultsView(BaseLoginRequiredView):
     template_name = 'cutplanner/results.html'
 
-class ManualPlannerView(TemplateView):
+class ManualPlannerView(BaseLoginRequiredView):
     template_name = 'cutplanner/manual_planner.html'
 
-class ProjectListView(LoginRequiredMixin, ListView):
+class ProjectListView(BaseLoginRequiredView):
     model = Project
     template_name = 'project_partials/projects_table.html'
     context_object_name = 'projects'
@@ -63,7 +69,7 @@ class ProjectListView(LoginRequiredMixin, ListView):
         return Project.objects.filter(user=self.request.user).order_by('-updated_at')
     
     
-class BaseInventoryView(LoginRequiredMixin, TemplateView):
+class BaseInventoryView(BaseLoginRequiredView):
     template_name = "inventory/index.html"
 
     def get_context_data(self, **kwargs):

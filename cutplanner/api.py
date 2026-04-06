@@ -37,7 +37,7 @@ def get_project(request, project_id: int):
     return project
 
 
-@api.post("/optimize", auth=[django_auth, None])
+@api.post("/optimize", auth=django_auth)
 def optimize_project(request, data: ProjectDataSchema):
     context = {
         "edgebands": {},
@@ -190,7 +190,7 @@ def create_furniture(request, data: FurnitureCreateSchema):
 
     return {"success": True, "id": furn.id}
 
-@api.post("/manual-planner/calculate-stats")
+@api.post("/manual-planner/calculate-stats", auth=django_auth)
 def calculate_manual_stats(request, data: ManualLayoutPayload):
     materials = {
         m.id: {

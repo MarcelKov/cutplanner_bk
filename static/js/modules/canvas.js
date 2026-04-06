@@ -94,7 +94,9 @@ export const KonvaRenderer = {
             strokeWidth: 1.5,
             cornerRadius: 1,
         });
+        group.add(rect);
 
+        // EDGES
         if (part.edges) {
             const edgeStrokeWidth = 2;
             const dashPattern = [4, 4];
@@ -124,48 +126,64 @@ export const KonvaRenderer = {
             });
         }
 
+        const maxFontSize = Math.min(pw * 0.4, ph * 0.4, 14);
+        const minFontSize = 6;
+        const calcFontSize = Math.max(minFontSize, maxFontSize);
+
         // MAIN LABEL
         const mainLabel = new Konva.Text({
             text: part.label,
-            fontSize: Math.max(10, 12 * scale),
+            fontSize: calcFontSize,
             fontStyle: 'bold',
             fontFamily: 'sans-serif',
             fill: '#1e3a8a',
+            width: pw,
+            align: 'center',
             listening: false
         });
+        mainLabel.y((ph / 2) - (mainLabel.height() / 2));
 
-        mainLabel.offsetX(mainLabel.width() / 2);
-        mainLabel.offsetY(mainLabel.height() / 2);
-        mainLabel.x(pw / 2);
-        mainLabel.y(ph / 2);
+        // hide if small
+        if (pw < 15 || ph < 15) mainLabel.visible(false);
+        group.add(mainLabel);
 
         // WIDTH DIMENSION
         const wText = new Konva.Text({
-            text: part.w.toFixed(1),
-            fontSize: Math.max(8, 9 * scale),
+            text: part.w.toFixed(0),
+            fontSize: Math.max(minFontSize - 1, calcFontSize * 0.8),
             fontFamily: 'sans-serif',
             fill: '#1e3a8a',
+            width: pw,
+            align: 'center',
+            padding: 2,
             listening: false
         });
 
-        wText.offsetX(wText.width() / 2);
-        wText.x(pw / 2);
-        wText.y(2);
+        // hide if small
+        if (pw < 25) wText.visible(false);
+        group.add(wText);
 
         // HEIGHT DIMENSION
         const hText = new Konva.Text({
-            text: part.h.toFixed(1),
-            fontSize: Math.max(8, 9 * scale),
+            text: part.h.toFixed(0),
+            fontSize: Math.max(minFontSize - 1, calcFontSize * 0.8),
             fontFamily: 'sans-serif',
             fill: '#1e3a8a',
-            listening: false
+            width: ph, 
+            align: 'center',
+            padding: 2,
+            listening: false,
+            rotation: 90,
+            x: 0 
         });
 
-        hText.offsetY(hText.height() / 2);
-        hText.x(4);
-        hText.y(ph / 2);
+        hText.x(hText.height()); 
+        hText.y((ph / 2) - (hText.width() / 2)); 
 
-        group.add(rect, mainLabel, wText, hText);
+        // hide if small
+        if (ph < 25) hText.visible(false);
+        group.add(hText);
+
         return group;
     },
 

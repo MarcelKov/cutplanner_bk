@@ -5,9 +5,17 @@
 <div class="flex justify-center items-center min-h-[60vh]">
     <div class="card w-full max-w-md bg-base-100 shadow-xl border border-base-300">
         <div class="card-body">
-            <h2 class="card-title justify-center text-2xl font-bold text-base-content mb-4">
+
+            <h2 class="card-title justify-center text-center text-2xl font-bold text-base-content mb-4 px-2">
+                {% if messages %}
+                {% for message in messages %}
+                <span class="text-info italic leading-tight">{{ message }}</span>
+                {% endfor %}
+                {% else %}
                 Login to CutPlanner
+                {% endif %}
             </h2>
+
             <form method="post">
                 {% csrf_token %}
                 <div class="space-y-4">
@@ -19,14 +27,26 @@
                     </button>
                 </div>
             </form>
+
             <div class="divider text-xs opacity-50 uppercase mt-8">Or</div>
             <div class="text-center">
                 <p class="text-sm">
-                    New here? 
+                    New here?
                     <a href="{% url 'signup' %}" class="link link-primary font-bold no-underline hover:underline">
                         Create an account
                     </a>
                 </p>
+                <div class="pt-2">
+                    <a href="{% url 'home' %}"
+                        class="link link-hover text-xs opacity-50 flex items-center justify-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        Back to Home
+                    </a>
+                </div>
             </div>
         </div>
     </div>
