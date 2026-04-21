@@ -4,6 +4,8 @@ export const projectBuilder = () => ({
     selectedFurniture: [],
     selectedStock: [],
     isProjectSaving: false,
+    searchFurniture: '', 
+    searchStock: '',
 
     toggleFurniture(id) {
         id = String(id);

@@ -437,6 +437,37 @@ export const manualPlannerData = () => ({
         this.renderManualCanvas();
     },
 
+
+    hasAnyCollisions() {
+        const kerf = parseFloat(this.settings.bladeThickness) || 0;
+        const activeSheets = this.manualLayout.sheets.filter(s => s.parts && s.parts.length > 0);
+
+        for (const sheet of activeSheets) {
+            const parts = sheet.parts;
+            for (let i = 0; i < parts.length; i++) {
+                for (let j = i + 1; j < parts.length; j++) {
+                    const p1 = parts[i];
+                    const p2 = parts[j];
+
+                    const isOverlapping = (
+                        p1.x < p2.x + p2.w + kerf &&
+                        p1.x + p1.w + kerf > p2.x &&
+                        p1.y < p2.y + p2.h + kerf &&
+                        p1.y + p1.h + kerf > p2.y
+                    );
+
+                    if (isOverlapping) {
+                        return {
+                            error: true,
+                            message: `Collision on ${sheet.label}: "${p1.label}" overlaps with "${p2.label}"`
+                        };
+                    }
+                }
+            }
+        }
+        return { error: false };
+    },
+
     async finalizeManualPlan() {
 
         const activeSheets = this.manualLayout.sheets.filter(s => s.parts && s.parts.length > 0);
@@ -444,6 +475,13 @@ export const manualPlannerData = () => ({
             this.errorMessage = "At least one part must be placed on a sheet.";
             setTimeout(() => { this.errorMessage = ''; }, 3000);
             return;
+        }
+
+        const collisionCheck = this.hasAnyCollisions();
+        if (collisionCheck.error) {
+            this.errorMessage = collisionCheck.message;
+            setTimeout(() => { this.errorMessage = ''; }, 3000);
+            return; 
         }
 
         this.isOptimizing = true;

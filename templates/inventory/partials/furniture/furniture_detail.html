@@ -50,7 +50,7 @@
                                 class="label-text text-[10px] font-black uppercase">Qty</span></label>
                         <input type="number" name="quantity" value="1" min="1"
                             class="input input-sm input-bordered w-14 text-center font-bold"
-                            @input="$el.value = Math.max(1, Math.floor(Math.abs($el.value)) || 1)">
+                            @blur="$el.value = Math.max(1, Math.floor(Math.abs($el.value)) || 1)">
                     </div>
                 </div>
 

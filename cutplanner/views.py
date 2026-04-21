@@ -60,11 +60,10 @@ class CuttingResultsView(BaseLoginRequiredView):
 class ManualPlannerView(BaseLoginRequiredView):
     template_name = 'cutplanner/manual_planner.html'
 
-class ProjectListView(BaseLoginRequiredView):
+class ProjectListView(LoginRequiredMixin, ListView):
     model = Project
     template_name = 'project_partials/projects_table.html'
     context_object_name = 'projects'
-
     def get_queryset(self):
         return Project.objects.filter(user=self.request.user).order_by('-updated_at')
     

@@ -14,7 +14,8 @@
     </td>
     <td class="text-center">
         <input type="number" name="quantity" value="{{ panel.quantity }}" min="1"
-               class="input input-bordered input-sm w-12 text-center font-bold" @input="$el.value = Math.max(1, Math.floor(Math.abs($el.value)) || 1)">
+               class="input input-bordered input-sm w-12 text-center font-bold" 
+               @blur="$el.value = Math.max(1, Math.floor(Math.abs($el.value)) || 1)">
     </td>
     <td>
         <select name="material" class="select select-bordered select-sm w-full text-xs font-bold">

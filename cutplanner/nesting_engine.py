@@ -211,6 +211,7 @@ class CustomPacker:
         weighted_area_score = 0 
         total_parts_compactness = 0 
         total_alignment_penalty = 0 
+        packed_rids = []
 
         for sheet in packed_sheets:
             # WASTE: pridame plochy desky 
@@ -230,13 +231,18 @@ class CustomPacker:
             # COMPACTNESS: souradnice vsech dilu -> blize se 0 lepsi
             for rect in sheet:
                 total_parts_compactness += (rect.x + rect.y)
+                packed_rids.append( rect.rid)
 
+        # Plocha neumístěných dílců
+        unpacked_area = sum((r['w'] * r['h']) / 1_000_000 for r in self.rects if r['rid'] not in packed_rids)
+        # Penalizace
+        unpacked_penalty = unpacked_area * 5_000_000
 
 
         if self.priority == 'cuts':
             # Priorita Minimal Cuts: prevazne ALIGNMENT
-            return (total_alignment_penalty * 0.5) + (area_m2 * 10)
+            return (total_alignment_penalty * 0.5) + (area_m2 * 10) + unpacked_penalty
 
         # Priorita Minimaze Waste:
         # prevazne plocha
-        return weighted_area_score + (total_parts_compactness * 0.1) + (total_alignment_penalty * 0.1)
+        return weighted_area_score + (total_parts_compactness * 0.1) + (total_alignment_penalty * 0.1) + unpacked_penalty
