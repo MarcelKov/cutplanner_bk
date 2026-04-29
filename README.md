@@ -1,6 +1,6 @@
 # CutPlanner
 
-Tento projekt je webová aplikace vytvořená v rámci [Bakalářské] práce v frameworku **Django**.
+Tento projekt je webová aplikace vytvořená v rámci Bakalářské práce v frameworku **Django**.
 
 ## Požadavky
 * Python 3.x
